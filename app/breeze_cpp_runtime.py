@@ -27,6 +27,10 @@ class Runtime:
   self.context = self.lib.jinx_breeze_init(
    str(MODELS/'breeze-tts-2-q8_0.gguf').encode(), str(reference).encode(), TRANSCRIPT.encode(), str(cache).encode())
   if not self.context:raise RuntimeError(self.error())
+  self.device="Vulkan"
+  if hasattr(self.lib,"jinx_breeze_backend"):
+   self.lib.jinx_breeze_backend.argtypes=[C.c_void_p];self.lib.jinx_breeze_backend.restype=C.c_char_p
+   self.device=self.lib.jinx_breeze_backend(self.context).decode()
  def error(self):return self.lib.jinx_breeze_error().decode(errors='replace')
  def generate(self,text,callback,first=4,maximum=25):
   errors=[]

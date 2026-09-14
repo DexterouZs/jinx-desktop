@@ -10,21 +10,26 @@ class BreezeVoice(JinxVoice):
    python=sys.executable if os.name=='nt' else ROOT/'.venv/bin/python'
    self.process=subprocess.Popen([str(python),str(ROOT/'breeze_cpp_worker.py')],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,text=True,bufsize=1,env={**os.environ,'HF_HUB_OFFLINE':'1','HF_HUB_DISABLE_TELEMETRY':'1','OMP_WAIT_POLICY':'PASSIVE','KMP_BLOCKTIME':'0','PYTHONDONTWRITEBYTECODE':'1'})
    self.using_gpu=False
-   self.lines=queue.Queue(maxsize=32)
-   def read_lines(process,lines):
-    try:
-     for line in process.stdout:
-      while process.poll() is None:
-       try:lines.put(line,timeout=.1);break
-       except queue.Full:continue
-    finally:
-     try:lines.put_nowait(None)
-     except queue.Full:pass
-   threading.Thread(target=read_lines,args=(self.process,self.lines),daemon=True).start()
    threading.Thread(target=self.process.wait,daemon=True).start()
+ def attach_reader(self,p):
+  if getattr(self,"reader_process",None) is p:return
+  self.reader_process=p
+  self.lines=queue.Queue(maxsize=32)
+  def read_lines(process,lines):
+   try:
+    for line in process.stdout:
+     while True:
+      try:lines.put(line,timeout=.1);break
+      except queue.Full:
+       if process.poll() is not None:return
+   except (OSError,ValueError):pass
+   finally:
+    try:lines.put_nowait(None)
+    except queue.Full:pass
+  threading.Thread(target=read_lines,args=(p,self.lines),daemon=True).start()
  def synthesise(self,text,path,speed,cancelled,on_chunk=None):
   if cancelled():raise VoiceCancelled()
-  self.warm();p=self.process
+  self.warm();p=self.process;self.attach_reader(p)
   try:
    p.stdin.write(json.dumps({'text':text,'path':str(path),'speed':speed,'stream':on_chunk is not None and speed==1})+'\n');p.stdin.flush()
    deadline=time.monotonic()+self.timeout

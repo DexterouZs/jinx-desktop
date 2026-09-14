@@ -54,6 +54,7 @@ JINX_EXPORT void * jinx_breeze_init(const char * model, const char * reference,
         return c.release();
     } catch (const std::exception & e) { error = e.what(); return nullptr; }
 }
+JINX_EXPORT const char * jinx_breeze_backend(void * ctx) { return static_cast<JinxBreeze *>(ctx)->model.backend.is_gpu ? "Vulkan" : "CPU"; }
 JINX_EXPORT void jinx_breeze_free(void * ctx) { delete static_cast<JinxBreeze *>(ctx); }
 JINX_EXPORT int jinx_breeze_generate(void * ctx, const char * text, int chunk_first, int chunk_max,
                         int (*callback)(const float *, int)) {

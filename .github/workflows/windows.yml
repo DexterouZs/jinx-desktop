@@ -6,7 +6,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-python@v7.0.0
@@ -16,21 +16,43 @@ jobs:
         run: |
           python scripts/check-release.py
           python -m unittest discover -s windows -p test_core.py -v
+          python -m unittest discover -s windows -p test_parity.py -v
       - name: Install build dependencies
         run: |
-          python -m pip install -r windows/requirements.txt
+          python -m pip install -r windows/requirements.txt -r windows/backend-requirements.txt
+          git clone --filter=blob:none --no-checkout https://github.com/NousResearch/hermes-agent.git hermes
+          git -C hermes checkout --detach b2aa855b626ff8688eb34b95c60ee8b6a4af3679
           npm ci --ignore-scripts --prefix app/avatar3d
+      - name: Install verified Vulkan SDK
+        shell: pwsh
+        run: |
+          $sdk = "$env:RUNNER_TEMP/vulkan.exe"
+          Invoke-WebRequest 'https://sdk.lunarg.com/sdk/download/1.4.357.0/windows/vulkansdk-windows-X64-1.4.357.0.exe' -OutFile $sdk
+          if ((Get-FileHash $sdk -Algorithm SHA256).Hash.ToLower() -ne '81f474711e9042f4cd22b31b2f7a8870db2e428b21586fb43dd80150be97310d') { throw 'Vulkan SDK checksum mismatch' }
+          $p = Start-Process $sdk -ArgumentList '--root C:\VulkanSDK\1.4.357.0 --accept-licenses --default-answer --confirm-command install com.lunarg.vulkan.core' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw 'SDK installer failed' }
+          "VULKAN_SDK=C:\VulkanSDK\1.4.357.0" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build matching Breeze voice engine
+        run: python windows/voice-build.py
       - name: Freeze native Windows application
         run: python windows/build.py
+      - name: Verify bundled backend and voice ABI
+        shell: pwsh
+        run: |
+          $env:JINX_STATE_DIR = "$env:RUNNER_TEMP/jinx-backend-smoke"
+          $env:PYTHONUTF8 = '1'
+          & "$pwd/dist/Jinx/runtime/python.exe" "$pwd/dist/Jinx/windows/backend_main.py" --check
+          if ($LASTEXITCODE -ne 0) { throw 'Shared backend check failed' }
       - name: Smoke-test frozen UI and speech libraries
         shell: pwsh
         run: |
           $env:JINX_SMOKE_REPORT = "$pwd/smoke.json"
+          $env:JINX_STATE_DIR = "$env:RUNNER_TEMP/jinx-ui-smoke"
           $process = Start-Process -FilePath "$pwd/dist/Jinx/Jinx.exe" -ArgumentList '--smoke-test' -PassThru
           if (-not $process.WaitForExit(90000)) { $process.Kill(); throw 'Frozen app timed out' }
           if ($process.ExitCode -ne 0) { throw "Frozen app failed: $($process.ExitCode)" }
           $report = Get-Content smoke.json -Raw | ConvertFrom-Json
-          if (-not $report.ui -or -not $report.speech_imports) { throw 'UI/speech check failed' }
+          if (-not $report.ui -or -not $report.shared_backend -or -not $report.breeze_library) { throw 'UI/speech check failed' }
           Get-Content smoke.json
       - name: Compile installer
         shell: pwsh
@@ -60,7 +82,7 @@ jobs:
       - name: Make portable ZIP and checksums
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/Jinx -DestinationPath dist/Jinx-0.2.0-preview-windows-x64-portable.zip
+          Compress-Archive -Path dist/Jinx -DestinationPath dist/Jinx-0.3.0-preview-windows-x64-portable.zip
           $lines = Get-ChildItem dist/*-setup.exe, dist/*-portable.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
           $lines | Set-Content dist/SHA256SUMS-windows.txt -Encoding ascii
           python -m pip freeze | Set-Content dist/windows-build-dependencies.txt

@@ -19,5 +19,8 @@ if '--check' in sys.argv:
  from breeze_cpp_runtime import C
  dll=C.CDLL(os.environ['JINX_BREEZE_LIBRARY'])
  for name in ['jinx_breeze_init','jinx_breeze_generate','jinx_breeze_free','jinx_breeze_error']:getattr(dll,name)
- print('Shared backend, Hermes, Windows speech and Breeze ABI imported.',flush=True)
+ assert jinx.mic_muted() in (True,False)
+ assert isinstance(windows_platform.app_catalog(),dict)
+ assert windows_platform.inspect_system({'topic':'overview'})['platform']
+ print('Shared backend, Hermes, Windows desktop diagnostics, speech and Breeze ABI verified.',flush=True)
 else:jinx.main()

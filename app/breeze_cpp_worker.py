@@ -35,11 +35,15 @@ def main():
     if speed!=1:
      # Apply rate to the entire waveform, preserving pitch and chunk boundaries.
      import subprocess
-     pcm=subprocess.run(['ffmpeg','-v','error','-f','s16le','-ar','24000','-ac','1','-i','pipe:0',
+     ffmpeg='ffmpeg'
+     if os.name=='nt':
+      from imageio_ffmpeg import get_ffmpeg_exe
+      ffmpeg=get_ffmpeg_exe()
+     pcm=subprocess.run([ffmpeg,'-v','error','-f','s16le','-ar','24000','-ac','1','-i','pipe:0',
       '-af','atempo='+str(speed),'-f','s16le','pipe:1'],input=pcm,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True,timeout=30).stdout
     with wave.open(req['path'],'wb') as w:
      w.setnchannels(1);w.setsampwidth(2);w.setframerate(24000);w.writeframes(pcm)
-    result={'ok':True,'engine':'Breeze TTS2 · Vulkan Q8','seconds':round(time.monotonic()-started,3),
+    result={'ok':True,'engine':'Breeze TTS2 · '+runtime.device+' Q8','seconds':round(time.monotonic()-started,3),
      'first_chunk_seconds':round(first,3),'duration':len(pcm)/48000}
    except Exception as e:result={'ok':False,'error':type(e).__name__+': '+str(e)[:200]}
    protocol.write(json.dumps(result)+'\n')

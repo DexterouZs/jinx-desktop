@@ -44,4 +44,27 @@ command = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--win
     '--hidden-import', 'win32com.client', '--hidden-import', 'pythoncom']
 for name in ('avatar.html', 'jinx.ico', 'jinx-launcher.jpg', 'starter-avatar.json', 'LICENSE.txt', 'WINDOWS.txt', 'ASSETS.txt', 'web', 'third-party-licenses'):
     command.extend(['--add-data', str(win/name) + ':' + (name if (win/name).is_dir() else '.')])
-subprocess.run(command + [str(win/'jinx_windows.py')], check=True, cwd=root)
+subprocess.run(command + [str(win/'desktop_host.py')], check=True, cwd=root)
+
+# Ship a relocatable Python runtime for the unchanged shared backend/Hermes.
+# Keeping this separate avoids freezing away dynamically registered agent tools.
+payload=root/'dist/Jinx'
+runtime=payload/'runtime';runtime.mkdir(exist_ok=True)
+base=Path(sys.base_prefix)
+for name in ('python.exe','pythonw.exe','python3.dll','python312.dll','vcruntime140.dll','vcruntime140_1.dll','LICENSE.txt'):
+    source=base/name
+    if source.is_file():shutil.copy2(source,runtime/name)
+shutil.copytree(base/'DLLs',runtime/'DLLs',dirs_exist_ok=True)
+shutil.copytree(base/'Lib',runtime/'Lib',dirs_exist_ok=True,ignore=shutil.ignore_patterns('site-packages','__pycache__','test','idlelib','tkinter','ensurepip'))
+shutil.copytree(base/'Lib/site-packages',runtime/'Lib/site-packages',dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','pip','pip-*','PyInstaller','pyinstaller*'))
+# Remove editable install links and user customisations: only the pinned source is used.
+for p in (runtime/'Lib/site-packages').glob('*.pth'):p.unlink()
+for p in (runtime/'Lib/site-packages').glob('sitecustomize*'):p.unlink()
+shutil.copytree(root/'app',payload/'app',ignore=shutil.ignore_patterns('__pycache__','test_*.py','native','installer','voice-jinx','*.wav','*.glb','*.key','*.token'),dirs_exist_ok=True)
+shutil.copytree(root/'hermes',payload/'hermes',ignore=shutil.ignore_patterns('.git','.github','website','tests','__pycache__'),dirs_exist_ok=True)
+shutil.copytree(root/'dist/voice',payload/'voice',dirs_exist_ok=True)
+windows=payload/'windows';windows.mkdir(exist_ok=True)
+for name in ('backend_main.py','setup_models.py','personal_profile.py'):shutil.copy2(win/name,windows/name)
+shutil.copy2(root/'assets.json',payload/'assets.json')
+shutil.copy2(root/'docs/jinx-launcher.jpg',payload/'app/avatar3d/jinx-icon.jpg')
+shutil.copy2(root/'app/PERSONALITY.md',payload/'app/PERSONALITY.md')

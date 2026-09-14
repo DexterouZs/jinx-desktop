@@ -182,7 +182,9 @@ def capture(cancel):
   import screen_view
   raise screen_view.Cancelled()
  # Refuse to capture a locked/secure desktop.
- import win32gui
+ ctypes.windll.user32.OpenInputDesktop.restype=ctypes.c_void_p
+ ctypes.windll.user32.SwitchDesktop.argtypes=[ctypes.c_void_p]
+ ctypes.windll.user32.CloseDesktop.argtypes=[ctypes.c_void_p]
  handle=ctypes.windll.user32.OpenInputDesktop(0,False,0x100)
  if not handle:raise ValueError('Unlock the Windows desktop before screen sharing.')
  try:
@@ -190,8 +192,9 @@ def capture(cancel):
  finally:ctypes.windll.user32.CloseDesktop(handle)
  image=ImageGrab.grab().convert('RGB');width,height=image.size
  if width*height>24000000:raise ValueError('Screen exceeds the capture limit')
+ text=windows_ocr(image)
  image.thumbnail((1600,1600));out=io.BytesIO();image.save(out,format='JPEG',quality=88)
- return {'image':base64.b64encode(out.getvalue()).decode(),'text':'','width':width,'height':height}
+ return {'image':base64.b64encode(out.getvalue()).decode(),'text':text,'width':width,'height':height}
 
 def install(backend):
  import system_tools,desktop_tools,browser_actions,launch_tools,steam_shortcuts,music_tools,screen_view,workbench,reminder_delivery
@@ -203,7 +206,10 @@ def install(backend):
  music_tools.call=music_call;music_tools.ensure_started=music_started
  screen_view.capture=capture
  backend.sleep_watch=lambda:None
- backend.mic_muted=lambda:bool(endpoint(True).GetMute())
+ def mic_muted():
+  try:return bool(endpoint(True).GetMute())
+  except Exception:return True
+ backend.mic_muted=mic_muted
  original_cmd=backend.cmd
  def cmd(args,timeout=10):
   if args[:2]==['wpctl','set-mute'] and args[2]=='@DEFAULT_AUDIO_SOURCE@':endpoint(True).SetMute(int(args[3]),None);return ''
@@ -241,8 +247,26 @@ def install(backend):
  def knowledge(args):
   return {'guide':Path(__file__).with_name('WINDOWS-GUIDE.md').read_text(),'instruction':'Capabilities and limits, not live hardware readings.'}
  system_tools.knowledge=knowledge
+ backend.PERSONA=backend.PERSONA.replace('assistant on Linux','assistant on Windows').replace('use MPRIS','use Windows media sessions')+'\nPlatform-specific rules supersede Linux references: '+knowledge({})['guide']
  repairs={'refresh_dns':('Flush the Windows DNS cache.',['ipconfig.exe','/flushdns'])}
  def preview(fields):
   if fields.get('job') not in repairs:raise ValueError('Use Windows diagnostics first; only reviewed Windows repairs are available.')
   description,command=repairs[fields['job']];return {'job':fields['job'],'description':description,'commands':[command]}
  system_tools.maintenance_preview=preview
+
+
+def windows_ocr(image):
+ async def recognize():
+  from winrt.windows.storage.streams import InMemoryRandomAccessStream,DataWriter
+  from winrt.windows.graphics.imaging import BitmapDecoder
+  from winrt.windows.media.ocr import OcrEngine
+  engine=OcrEngine.try_create_from_user_profile_languages()
+  if engine is None:return ''
+  copy=image.copy();copy.thumbnail((3000,3000));encoded=io.BytesIO();copy.save(encoded,format='PNG')
+  stream=InMemoryRandomAccessStream();writer=DataWriter(stream)
+  writer.write_bytes(encoded.getvalue());await writer.store_async();writer.detach_stream();stream.seek(0)
+  decoder=await BitmapDecoder.create_async(stream);bitmap=await decoder.get_software_bitmap_async()
+  try:return (await engine.recognize_async(bitmap)).text[:16000]
+  finally:bitmap.close();stream.close()
+ try:return asyncio.run(recognize())
+ except Exception:return ''
