@@ -10,8 +10,8 @@
 
 | Your system | Download | Start here |
 |---|---|---|
-| **CachyOS / Arch · KDE Plasma 6** | **Linux ZIP** | Extract, then run `bash "Install Jinx.sh" --install-deps` |
-| **Windows 11 · x64** | **Windows setup.exe** | Run the installer, open Jinx, then follow Settings → Get Ollama |
+| **CachyOS / Arch · KDE Plasma 6** | [**Download Linux ZIP**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.2.0-preview/Jinx-0.2.0-preview-linux.zip) | Extract, then run `bash "Install Jinx.sh" --install-deps` |
+| **Windows 11 · x64** | [**Download Windows installer**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.2.0-preview/Jinx-0.2.0-preview-windows-x64-setup.exe) | Run the installer, open Jinx, then follow Settings → Get Ollama |
 
 **[Download Jinx →](https://github.com/DexterouZs/jinx-desktop/releases)** · [Linux setup](docs/INSTALL.md) · [Windows setup](docs/WINDOWS.md)
 
