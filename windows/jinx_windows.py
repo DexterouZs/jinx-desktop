@@ -160,7 +160,7 @@ class Window(QMainWindow):
         if self.worker:
             return
         worker = Worker(function); self.worker = worker; self.busy(True)
-        worker.event.connect(self.event)
+        worker.event.connect(self.handle_event)
         worker.failed.connect(self.error)
         def finish():
             self.worker = None; self.busy(False)
@@ -177,7 +177,7 @@ class Window(QMainWindow):
         self.phase('Error: ' + message)
         self.transcript.append(('Jinx', message)); self.render()
 
-    def event(self, kind, value):
+    def handle_event(self, kind, value):
         if kind == 'phase': self.phase(value)
         elif kind == 'token': self.answer += value; self.render()
         elif kind == 'models':

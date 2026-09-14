@@ -1,29 +1,27 @@
-<p align="center"><img src="docs/banner.svg" alt="Jinx — a personal companion for Linux" width="100%"></p>
+<p align="center"><img src="docs/jinx.png" width="88" alt="Jinx launcher portrait"></p>
+<h1 align="center">Jinx</h1>
+<p align="center"><strong>Your local desktop companion. Talk. Create. Get things done.</strong></p>
+<p align="center">Linux · Windows preview · Local AI · Voice · Personal memory</p>
 
-<p align="center"><strong>A voice-enabled desktop assistant that remembers, researches and helps you get things done.</strong></p>
-<p align="center">Linux · KDE Plasma 6 · Local Qwen models · Optional connected services</p>
+<img src="docs/banner.png" alt="Jinx with her actual 3D desktop avatar" width="100%">
+<sub>The owner's custom 3D avatar, rendered for this project. The model is not bundled; choose your own compatible avatar or download the free starter.</sub>
 
-Jinx lives on your desktop as a small animated companion. Click to talk, pause naturally, hear her answer, and continue the conversation. Click again to stop. Her memory stays on your SSD, and her tools can open applications, research websites, prepare drafts and handle supported everyday tasks.
+### Download & install
 
-<img src="docs/workspace.png" alt="Jinx workspace with a synthetic example conversation" width="100%">
-<sub>Actual workspace interface, shown with synthetic demonstration data.</sub>
+| Your system | Download | Start here |
+|---|---|---|
+| **CachyOS / Arch · KDE Plasma 6** | **Linux ZIP** | Extract, then run `bash "Install Jinx.sh" --install-deps` |
+| **Windows 11 · x64** | **Windows setup.exe** | Run the installer, open Jinx, then follow Settings → Get Ollama |
 
-**Early preview — CachyOS/Arch on KDE Wayland.** Developed and tested on an AMD Ryzen AI MAX+ 395 / Radeon 8060S laptop. This is an installable application bundle, not a universal AppImage or a guarantee that every task works on every Linux desktop.
+**[Download Jinx →](https://github.com/DexterouZs/jinx-desktop/releases)** · [Linux setup](docs/INSTALL.md) · [Windows setup](docs/WINDOWS.md)
 
-### Get started
+Both editions are previews. **Windows is a smaller native port**, with chat, voice, memory, basic app/website launches and an avatar view. Linux has the established animated desktop widget and broader integrations described below. Windows does not yet include the Linux system-admin, calendar, screen, continuous-conversation or cloned-voice features.
 
-Download the ZIP from [Releases](https://github.com/DexterouZs/jinx-desktop/releases), extract it, and run:
+Models download separately. Linux's full setup needs roughly 13 GB of model storage; the Windows everyday model needs roughly 3–4 GB, plus the app and speech model. **Jinx starts only when you launch her.** No personal accounts, memories or API keys are included.
 
-```bash
-bash "Install Jinx.sh" --check
-bash "Install Jinx.sh" --install-deps
-```
+On an existing Linux installation, use `--update` only when you intend to update it. The installer preserves private data and creates a previous-app backup. [Installation and recovery →](docs/INSTALL.md)
 
-Then open **Jinx** from the application menu. No AI service is enabled at login. The installer builds the native desktop interface, installs an isolated Python environment and downloads the selected models. **Allow approximately 13 GB for the full language models, plus dependencies and speech assets. Internet is required during installation.** Existing model files are reused.
-
-Already installed? Use `--update` to preserve the previous application in an installer backup. Your memory, private service connections and settings remain separate. [Installation and recovery →](docs/INSTALL.md)
-
-### What she can do
+### Linux features
 
 | Capability | How it works |
 |---|---|
@@ -70,4 +68,4 @@ cd /absolute/path/to/new-build
 .venv/bin/python -m unittest test_adaptive test_task_guard test_news_briefing
 ```
 
-MIT for original application code; see [LICENSE](LICENSE) and [third-party notices](docs/ASSETS.md). No affiliation with Riot Games, Anuttacon, AMD, Valve or the providers of optional integrations.
+Original code is MIT. Jinx character artwork is fan artwork, not covered by the code licence; no rights to the character are claimed. See [LICENSE](LICENSE) and [third-party notices](docs/ASSETS.md). No affiliation with Riot Games, Anuttacon, AMD, Valve or the providers of optional integrations.

@@ -13,4 +13,10 @@ The optional starter character comes from TalkingHead's `avatars/brunette.glb`, 
 
 The owner's custom Jinx character and recorded/cloned voices have separate provenance and are not included in GitHub releases. A private NAS ZIP can contain those personal restoration assets; that does not grant public redistribution rights. Large AI weights and trained voice caches are excluded from both source control and ordinary app updates.
 
-Jinx's SVG branding in `docs/` is original project artwork. No Whispers from the Star character, voice or proprietary pipeline is included.
+The circular Jinx launcher portrait and promotional avatar screenshots are published at the project owner's request. They depict Riot Games' Jinx as fan artwork and are not relicensed under the MIT code licence; no character ownership or endorsement is claimed. The full custom 3D model and voice recordings are not publicly redistributed. The banner layout and application UI are original project work. No Whispers from the Star character, voice or proprietary pipeline is included.
+
+## Windows bundle
+
+PySide6/Qt is dynamically bundled under its applicable LGPL/commercial terms; LGPLv3 text and package notices are included in `third-party-licenses/`. Users may replace compatible Qt libraries in the portable application's `_internal` directory for debugging/modification under those terms. Upstream source: https://code.qt.io/ and https://code.qt.io/pyside/pyside-setup.git/ . No additional restriction is imposed on reverse engineering needed to debug those modifications.
+
+The Windows bundle also includes faster-whisper (MIT), CTranslate2 (MIT), sounddevice/PortAudio, PyWin32, NumPy, PyAV/FFmpeg and their dependencies under their own licences. Build-time package licence files and exact versions accompany the binary. Whisper weights, Ollama and avatar assets download separately. Windows SAPI voices are provided by Windows; no Microsoft voice assets are redistributed.
