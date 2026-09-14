@@ -18,7 +18,7 @@ HERMES = 'b2aa855b626ff8688eb34b95c60ee8b6a4af3679'
 PACKAGES = ['uv','git','cmake','ninja','nodejs','npm','qt6-webengine',
             'qt6-declarative','qt6-tools','layer-shell-qt','portaudio','pipewire',
             'wireplumber','ffmpeg','whisper-cpp','ollama','libnotify',
-            'tesseract','tesseract-data-eng','vulkan-headers','vulkan-icd-loader','glslc']
+            'tesseract','tesseract-data-eng','vulkan-headers','vulkan-icd-loader','shaderc']
 
 
 def run(argv, **kwargs):
