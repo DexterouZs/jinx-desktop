@@ -1,0 +1,77 @@
+name: Windows installer
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Check source and core behaviour
+        run: |
+          python scripts/check-release.py
+          python -m unittest discover -s windows -p test_core.py -v
+      - name: Install build dependencies
+        run: |
+          python -m pip install -r windows/requirements.txt
+          npm ci --ignore-scripts --prefix app/avatar3d
+      - name: Freeze native Windows application
+        run: python windows/build.py
+      - name: Smoke-test frozen UI and speech libraries
+        shell: pwsh
+        run: |
+          $env:JINX_SMOKE_REPORT = "$pwd/smoke.json"
+          $process = Start-Process -FilePath "$pwd/dist/Jinx/Jinx.exe" -ArgumentList '--smoke-test' -PassThru
+          if (-not $process.WaitForExit(90000)) { $process.Kill(); throw 'Frozen app timed out' }
+          if ($process.ExitCode -ne 0) { throw "Frozen app failed: $($process.ExitCode)" }
+          $report = Get-Content smoke.json -Raw | ConvertFrom-Json
+          if (-not $report.ui -or -not $report.speech_imports) { throw 'UI/speech check failed' }
+          Get-Content smoke.json
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $compiler = "${env:ProgramFiles(x86)}/NSIS/makensis.exe"
+          if (-not (Test-Path $compiler)) { choco install nsis --yes --no-progress }
+          & $compiler windows/installer.nsi
+          if ($LASTEXITCODE -ne 0) { throw 'NSIS failed' }
+      - name: Test install and uninstall without deleting user notes
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist/*-setup.exe | Select-Object -First 1
+          $process = Start-Process $setup.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Installer failed' }
+          $installed = "$env:LOCALAPPDATA/Programs/Jinx"
+          if (-not (Test-Path "$installed/Jinx.exe")) { throw 'Installed executable missing' }
+          $process = Start-Process "$installed/Jinx.exe" -ArgumentList '--smoke-test' -PassThru
+          if (-not $process.WaitForExit(90000)) { $process.Kill(); throw 'Installed app timed out' }
+          if ($process.ExitCode -ne 0) { throw 'Installed app smoke test failed' }
+          $privateData = "$env:LOCALAPPDATA/Jinx/data"
+          New-Item -ItemType Directory -Force $privateData | Out-Null
+          Set-Content "$privateData/preservation-test.txt" 'keep private notes'
+          Start-Process "$installed/Uninstall.exe" -ArgumentList '/S' -Wait
+          Start-Sleep -Seconds 5
+          if (Test-Path "$installed/Jinx.exe") { throw 'Uninstall failed' }
+          if (-not (Test-Path "$privateData/preservation-test.txt")) { throw 'Uninstaller deleted private data' }
+      - name: Make portable ZIP and checksums
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/Jinx -DestinationPath dist/Jinx-0.2.0-preview-windows-x64-portable.zip
+          $lines = Get-ChildItem dist/*-setup.exe, dist/*-portable.zip | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }
+          $lines | Set-Content dist/SHA256SUMS-windows.txt -Encoding ascii
+          python -m pip freeze | Set-Content dist/windows-build-dependencies.txt
+          Copy-Item smoke.json dist/windows-smoke.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jinx-windows-preview
+          path: |
+            dist/*-setup.exe
+            dist/*-portable.zip
+            dist/SHA256SUMS-windows.txt
+            dist/windows-build-dependencies.txt
+            dist/windows-smoke.json
+          retention-days: 14

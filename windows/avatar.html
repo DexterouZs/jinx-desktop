@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body,#stage{margin:0;width:100%;height:100%;overflow:hidden;background:transparent;color:#c9d7df;font:14px system-ui}#placeholder{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}#placeholder strong{font-size:70px;font-weight:300;color:#8ddddf}#placeholder small{margin-top:15px;color:#97a5b3}#state{position:absolute;bottom:22px;left:10px;right:10px;text-align:center;font-size:13px;text-shadow:0 1px 5px #000}#stage{cursor:pointer}
+</style><script type="importmap">{"imports":{"three":"./web/node_modules/three/build/three.module.js","three/addons/":"./web/node_modules/three/examples/jsm/"}}</script>
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script></head><body><div id="stage"></div><div id="placeholder"><img src="./jinx-launcher.jpg" style="width:130px;height:130px;object-fit:cover;border-radius:50%;border:3px solid #80cedb;margin:auto"><small>Your local companion<br>Choose an avatar in Settings</small></div><div id="state">Ready</div><script type="module">
+import {TalkingHead} from './web/vendor/talkinghead.mjs';
+let head=null, bridge=null, speaking=false;
+new QWebChannel(qt.webChannelTransport, channel=>{bridge=channel.objects.jinx;bridge.ready();});
+window.jinxAvatar={ready:false, async load(url){try{
+ if(!head)head=new TalkingHead(document.getElementById('stage'),{cameraView:'upper',cameraRotateEnable:false,cameraPanEnable:false,cameraZoomEnable:false,modelFPS:24,modelPixelRatio:1,lightAmbientIntensity:.25,lightDirectIntensity:1.4,lightSpotIntensity:0,ttsEndpoint:null,lipsyncModules:['en'],avatarIdleHeadMove:.2});
+ await head.showAvatar({url,body:'F',avatarMood:'neutral',lipsyncLang:'en'});
+ document.getElementById('placeholder').style.display='none';window.jinxAvatar.ready=true;
+ }catch(e){document.getElementById('state').textContent='Avatar could not load. Use a compatible TalkingHead GLB.';bridge?.avatarError(String(e));}},
+ state(value){document.getElementById('state').textContent=value;speaking=value==='Speaking';if(head){head.animFrameDur=1000/(value==='Ready'?12:24);}},
+};
+document.getElementById('stage').onclick=()=>bridge?.talk();
+// Lightweight speech motion. Windows SAPI does not expose phoneme alignment here.
+setInterval(()=>{if(!head)return;const v=head.mtAvatar?.viseme_aa;if(v)Object.assign(v,{realtime:speaking?.16+.20*Math.abs(Math.sin(performance.now()/140)):0,needsUpdate:true});},60);
+</script></body></html>

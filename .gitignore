@@ -21,3 +21,16 @@ state/
 *.log
 *.zip
 !app/installer/CMakeLists.txt
+
+# Windows build output (never private avatars or generated binaries in Git)
+windows/web/
+windows/third-party-licenses/
+windows/jinx.ico
+windows/jinx-launcher.jpg
+windows/starter-avatar.json
+windows/LICENSE.txt
+windows/WINDOWS.txt
+windows/ASSETS.txt
+build/
+*.spec
+jinx-smoke.json
