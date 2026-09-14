@@ -32,7 +32,9 @@ class Interceptor(QWebEngineUrlRequestInterceptor):
   elif u.scheme() not in ('data','blob','about'):info.block(True)
 
 class Page(QWebEnginePage):
- def acceptNavigationRequest(self,url,kind,main):return url.toString().startswith(ORIGIN+'/') or url.toString()=='about:blank'
+ def acceptNavigationRequest(self,url,kind,main):
+  if self.property('smoke') and url.scheme()=='data':return True
+  return url.toString().startswith(ORIGIN+'/') or url.toString()=='about:blank'
 
 class Corners(QWidget):
  def __init__(self):
@@ -262,6 +264,7 @@ def main():
  if smoke:
   window.web=window.webview(window);window.web.setGeometry(window.rect());window.web.show()
   # UI imports/rendering are tested without microphone, account credentials or model downloads.
+  window.web.page().setProperty('smoke',True)
   window.web.setHtml('<html><body style="background:transparent">Jinx</body></html>',QUrl(ORIGIN+'/'))
   def check():
    def done(value):
