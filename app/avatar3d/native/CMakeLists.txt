@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(Jinx3D LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_AUTOMOC ON)
+find_package(Qt6 REQUIRED COMPONENTS Quick WebEngineQuick WebEngineCore DBus)
+find_package(LayerShellQt REQUIRED)
+add_executable(jinx-desktop main.cpp)
+target_link_libraries(jinx-desktop PRIVATE Qt6::DBus Qt6::Quick Qt6::WebEngineQuick Qt6::WebEngineCore LayerShellQt::Interface)

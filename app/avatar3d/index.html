@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Jinx</title>
+<style>
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:transparent!important;color:#e9f0ff;font:13px system-ui}#stage{position:absolute;inset:0 0 64px;cursor:pointer;outline:none;mask-image:linear-gradient(black 0%,black 83%,transparent 100%)}#stage canvas{mask-image:linear-gradient(black 0%,black 80%,transparent 99%);-webkit-mask-image:linear-gradient(black 0%,black 80%,transparent 99%)}#ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#caption{position:absolute;bottom:102px;left:12px;right:12px;margin:auto;padding:8px 12px;text-align:center;white-space:pre-line;overflow-wrap:anywhere;font-size:clamp(13px,2.85vw,18px);font-weight:500;line-height:1.35;letter-spacing:normal;color:#fff;text-shadow:0 1px 2px #000;background:rgba(8,12,20,.78);border:1px solid #ffffff14;border-radius:12px;box-shadow:0 4px 14px #0003;pointer-events:none;opacity:1;transition:opacity .18s;max-width:520px}#caption:empty{opacity:0}#caption[data-kind="status"]{font-size:12px;font-weight:400;color:#d0d7e2;background:rgba(8,12,20,.58);padding:6px 10px}#tools{position:absolute;bottom:46px;left:50%;transform:translateX(-50%);width:46px;display:flex;align-items:center;gap:8px}#menuButton{width:46px;height:46px;padding:0;border-radius:50%;font-size:25px;line-height:1;border-color:#76e1e87a}body:hover #tools,body.active #tools,body.pending #tools{opacity:1}button{font:inherit;color:#e0e9fb;background:#121c2ed9;border:1px solid #6684a350;border-radius:16px;padding:6px 12px;cursor:pointer;backdrop-filter:blur(10px)}button:hover{background:#34445ae8}#menu{position:absolute;right:16px;bottom:102px;padding:12px;border-radius:18px;background:#101827ed;border:1px solid #61769370;max-width:344px;max-height:calc(100vh - 116px);overflow-y:auto;display:none;box-shadow:0 8px 25px #0006}#menu.open{display:grid;gap:8px}#menu label{display:flex;align-items:center;gap:8px;padding:5px}dialog{color:#e9f0ff;background:#131b29ef;border:1px solid #61769370;border-radius:20px;width:calc(100% - 30px);max-height:78%;padding:18px}dialog::backdrop{background:#0003}#fields{white-space:pre-wrap;overflow:auto;max-height:230px;line-height:1.5;overflow-wrap:anywhere}textarea{width:100%;height:110px;color:#eee;background:#0b1220;border:1px solid #61769370;border-radius:10px;font:inherit;padding:9px}h3{font-weight:500;margin:0 0 12px}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}small{color:#aebed8}#reviewButton{display:none;position:absolute;right:calc(100% + 8px);white-space:nowrap}
+
+#menu{color-scheme:dark;scrollbar-width:thin;scrollbar-color:#687385 #0000;width:min(344px,calc(100vw - 28px));max-height:calc(100vh - 116px)}
+.sectionTitle{font-size:14px;font-weight:500;padding:2px 5px 6px}#menu details{border-top:1px solid #ffffff18;padding-top:9px}#menu summary{cursor:pointer;color:#d9e2f0;padding:4px}.optionGroup{display:grid;gap:7px;padding-top:8px}#menu .sliderLabel{justify-content:space-between;padding:1px 5px}#menu select{width:100%;padding:7px;border-radius:9px;background:#182233;color:#e9f0ff;border:1px solid #ffffff26}input[type=range]{width:100%;accent-color:#c5ccda}body.editing #stage{cursor:grab;touch-action:none}body.editing #stage:active{cursor:grabbing}body.editing::after{content:'';position:absolute;inset:8px;border:1px dashed #e1e8f05c;border-radius:22px;pointer-events:none}body.editing #tools{opacity:1}
+
+.menuHeader{display:flex;align-items:center;justify-content:space-between}.menuHeader .sectionTitle{font-size:16px;font-weight:600;padding:0}#closeMenu{border:0;background:transparent;font-size:22px;padding:0 6px}#menu .primaryAction{background:#254451;border-color:#76e1e84d}#menu button{min-height:34px;border-radius:10px}#menu .switchRow{justify-content:space-between;padding:8px 2px}#menu details{padding-top:5px}#menu summary{padding:9px 3px;font-weight:500}#menu input[type=checkbox]{accent-color:#76d5de;width:16px;height:16px}#menu .optionGroup{padding:5px 2px 10px}#menu small{line-height:1.5}button:focus-visible,summary:focus-visible{outline:2px solid #76e1e8;outline-offset:2px}
+
+/* Original caption position, with a quiet activity/model label. */
+#activityInfo{position:absolute;bottom:102px;left:12px;right:12px;pointer-events:none}
+#activityInfo[data-kind=hidden]{opacity:0}
+#caption,#caption[data-kind=status]{position:static}
+#modelBadge{display:block;text-align:center;font-size:10px;color:#c4d1e3;text-shadow:0 1px 3px #000;margin-bottom:4px}
+#modelBadge:empty{display:none}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<canvas id="ring"></canvas><div id="stage" tabindex="0" role="button" aria-label="Jinx: click to start or end a conversation"></div>
+<div id="tools"><button id="menuButton" aria-label="Jinx options">⋯</button><button id="reviewButton">Review</button></div><div id="activityInfo" data-kind="status"><small id="modelBadge"></small><div id="caption" role="status" aria-live="off">Waking Jinx’s avatar…</div></div>
+<div id="menu">
+<div class="menuHeader"><strong class="sectionTitle">Jinx</strong><button id="closeMenu" aria-label="Close Jinx options">×</button></div>
+<button id="typeButton" class="primaryAction">Type a message</button>
+<label class="switchRow"><span>Listen for “Jinx”</span><input type="checkbox" id="wake"></label>
+<details><summary>Avatar · size & position</summary><div class="optionGroup">
+<button id="unlockAvatar">Unlock to move</button>
+<small id="moveHint">Unlock, then drag Jinx to move her.</small>
+<label class="sliderLabel">Size <output id="avatarSizeValue">100%</output></label>
+<input id="avatarSize" aria-label="Avatar size" type="range" min="40" max="160" step="1" value="100">
+<button id="resetAvatar">Reset size & position</button>
+</div></details>
+<details><summary>AI model</summary><div class="optionGroup">
+<select id="modelChoice" aria-label="AI model"></select>
+<small id="modelHint"></small><small>Saved automatically. Finish your conversation before switching.</small>
+</div></details>
+<details><summary>Voice & sound</summary><div class="optionGroup">
+<small>Speak English or German. Jinx always replies in English with your selected voice.</small>
+<select id="voiceChoice" aria-label="Jinx voice"><option value="breeze_tts2">Breeze TTS2 · GPU streaming</option><option value="jinx_local">Jinx · local clone</option><option value="kokoro_emma">Emma · British</option><option value="kokoro_isabella">Isabella · British</option><option value="piper_alba">Alba · lightweight</option></select>
+<label class="sliderLabel">Speaking speed <output id="avatarVoiceSpeedValue">1.00×</output></label>
+<input id="avatarVoiceSpeed" aria-label="Speaking speed" type="range" min="0.85" max="1.15" step="0.05" value="1.00">
+<button id="voicePreview">Hear voice</button>
+<label><input type="checkbox" id="voice">Spoken replies</label>
+<label><input type="checkbox" id="thinkingSounds">Thinking sounds</label>
+</div></details>
+<details><summary>Screen & pages</summary><div class="optionGroup">
+<label><input type="checkbox" id="screenEnabled">Allow screen viewing on request</label>
+<small>One local snapshot when you ask. Blue corners show when Jinx is looking or reading a page.</small>
+<button id="lookScreen">Look at my screen</button><button id="readScreen">Read this page aloud</button>
+<button id="stopScreen">Stop looking / reading</button>
+</div></details>
+<button id="readClipboardButton">Read copied text aloud</button><button id="settingsButton">Open workspace & settings ↗</button>
+</div>
+<dialog id="review"><h3>Review action</h3><div id="fields"></div><small>Confirm applies the displayed action. Mail and calendar drafts stay local.</small><div class="actions"><button id="discard">Discard</button><button id="confirm">Confirm</button><button id="closeReview">Close</button></div></dialog>
+<dialog id="compose"><h3>Message Jinx</h3><textarea id="text" placeholder="Ask Jinx…"></textarea><div class="actions"><button id="closeCompose">Close</button><button id="send">Send</button></div></dialog>
+<script type="module" src="./avatar.mjs"></script></body></html>

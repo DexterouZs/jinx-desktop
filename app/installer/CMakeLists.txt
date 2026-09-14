@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(JinxInstaller LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_AUTOMOC ON)
+find_package(Qt6 REQUIRED COMPONENTS Quick Network)
+find_package(LayerShellQt REQUIRED)
+add_executable(jinx-installer main.cpp)
+target_link_libraries(jinx-installer PRIVATE Qt6::Quick Qt6::Network LayerShellQt::Interface)

@@ -1,0 +1,91 @@
+#!/usr/bin/python3
+"""One reversible desktop pause control; no power-profile or game changes."""
+import fcntl,json,os,subprocess,sys,time,urllib.request
+from pathlib import Path
+os.umask(0o077)
+ROOT=Path.home();STATE=ROOT/'.local/state/jinx-desktop-control';FLAG=STATE/'paused.json'
+UNITS=['jinx-desktop.service','jinx.service','jinx-model.service']
+PLUGIN='local.cybercity.afterhours'
+def run(args,timeout=20):
+ p=subprocess.run(args,capture_output=True,text=True,timeout=timeout)
+ if p.returncode:raise RuntimeError(p.stderr.strip()[:220] or 'Command failed: '+args[0])
+ return p.stdout.strip()
+def gaming():
+ output=run(['systemctl','--user','show','gamescope-session.service','gamescope-session.target','-p','ActiveState','--value'])
+ return any(v in ('active','activating','reloading') for v in output.split())
+def plasma(script):return run(['qdbus6','org.kde.plasmashell','/PlasmaShell','org.kde.PlasmaShell.evaluateScript',script])
+def wallpapers():
+ return json.loads(plasma('print(JSON.stringify(desktops().filter(d=>d.wallpaperPlugin==='+json.dumps(PLUGIN)+').map(d=>{d.currentConfigGroup=["Wallpaper",d.wallpaperPlugin,"General"];return {id:d.id,plugin:d.wallpaperPlugin,paused:d.readConfig("Paused",false)}})))'))
+def set_wallpapers(items,paused=None):
+ js='const items='+json.dumps(items)+';for(const item of items){const d=desktopById(item.id);if(!d||d.wallpaperPlugin!==item.plugin)continue;d.currentConfigGroup=["Wallpaper",d.wallpaperPlugin,"General"];d.writeConfig("Paused",'+('item.paused' if paused is None else json.dumps(paused))+');}'
+ plasma(js)
+def api(path,data=None):
+ token=(ROOT/'.local/state/jinx/access.key').read_text().strip()
+ req=urllib.request.Request('http://127.0.0.1:17341'+path,data=json.dumps(data).encode() if data is not None else None,headers={'X-Jinx-Token':token,'Content-Type':'application/json'})
+ return json.load(urllib.request.urlopen(req,timeout=4))
+def wait_ready():
+ for _ in range(50):
+  try:return api('/status')
+  except OSError:time.sleep(.1)
+ raise RuntimeError('Jinx did not become ready.')
+def write_flag(saved):
+ p=STATE/'paused.tmp';p.write_text(json.dumps(saved,indent=2)+'\n');p.replace(FLAG)
+def pause():
+ saved=json.loads(FLAG.read_text()) if FLAG.exists() else {'wallpapers':wallpapers(),'paused_at':time.time()}
+ write_flag(saved)
+ error=None
+ try:set_wallpapers(saved['wallpapers'],True)
+ except Exception as e:error=e
+ run(['systemctl','--user','stop',*UNITS],30)
+ if error:raise RuntimeError('Jinx stopped, but wallpaper pause failed: '+str(error))
+ return 'Jinx fully stopped · wallpaper paused'
+def resume():
+ if gaming():raise RuntimeError('Jinx stays off in Game Mode. Return to Desktop Mode to use her.')
+ if FLAG.exists():
+  saved=json.loads(FLAG.read_text());set_wallpapers(saved['wallpapers']);FLAG.unlink()
+ run(['systemctl','--user','start','jinx-desktop.service'],20)
+ wait_ready()
+ return 'Jinx and wallpaper resumed'
+def talk():
+ if gaming():raise RuntimeError('Jinx stays off in Game Mode.')
+ # Start the lightweight portrait first, then wake its backend on demand.
+ if FLAG.exists():FLAG.unlink()
+ run(['systemctl','--user','start','jinx-desktop.service'],20)
+ for _ in range(40):
+  try:
+   run(['qdbus6','org.jinx.Desktop','/org/jinx/Desktop','org.freedesktop.DBus.Properties.Get','org.jinx.Desktop','sleeping']);break
+  except RuntimeError:time.sleep(.1)
+ # The skull leaves the native window alive; wake it before opening the mic.
+ try:
+  if run(['qdbus6','org.jinx.Desktop','/org/jinx/Desktop','org.freedesktop.DBus.Properties.Get','org.jinx.Desktop','sleeping'])=='true':
+   run(['qdbus6','org.jinx.Desktop','/org/jinx/Desktop','org.jinx.Desktop.toggleSleep'])
+ except RuntimeError:pass
+ if FLAG.exists():resume()
+ else:run(['systemctl','--user','start','jinx-desktop.service'],20)
+ for _ in range(80):
+  try:s=api('/status');break
+  except OSError:time.sleep(.1)
+ else:raise RuntimeError('Jinx did not wake in time.')
+ if s.get('conversation') or s.get('busy') or s.get('ptt'):api('/stop',{});return 'Conversation stopped'
+ api('/conversation',{'unmute':True});return 'Listening · press Meta+J again to stop'
+def main():
+ op=sys.argv[1] if len(sys.argv)>1 else 'toggle'
+ if op=='can-run':return 1 if FLAG.exists() or gaming() else 0
+ if op=='status':print(json.dumps({'paused':FLAG.exists()}));return 0
+ STATE.mkdir(mode=0o700,exist_ok=True)
+ with (STATE/'control.lock').open('w') as lock:
+  fcntl.flock(lock,fcntl.LOCK_EX)
+  if op=='toggle':message=resume() if FLAG.exists() else pause()
+  elif op=='pause':message=pause()
+  elif op=='resume':message=resume()
+  elif op=='talk':message=talk()
+  else:raise ValueError('Use toggle, pause, resume, talk or status.')
+ print(json.dumps({'ok':True,'paused':FLAG.exists(),'message':message}))
+ subprocess.run(['notify-send','-a','Jinx','-i','media-playback-pause' if FLAG.exists() else 'audio-input-microphone','-t','2500','Jinx',message],capture_output=True)
+ return 0
+if __name__=='__main__':
+ try:sys.exit(main())
+ except Exception as e:
+  message=str(e)[:300];print(json.dumps({'ok':False,'error':message}))
+  if len(sys.argv)<2 or sys.argv[1]!='can-run':subprocess.run(['notify-send','-a','Jinx','Jinx controls',message],capture_output=True)
+  sys.exit(1)

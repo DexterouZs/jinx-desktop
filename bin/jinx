@@ -1,0 +1,27 @@
+#!/usr/bin/python3
+import sys,json,urllib.request,urllib.error,subprocess,time
+from pathlib import Path
+base='http://127.0.0.1:17341';state=Path.home()/'.local/state/jinx'
+args=sys.argv[1:]
+if args!=['status']:subprocess.run(['systemctl','--user','start','jinx.service'],check=True)
+for _ in range(30):
+ try:token=(state/'access.key').read_text().strip();break
+ except FileNotFoundError:time.sleep(.1)
+args=sys.argv[1:]
+if not args or args==['open']:
+ subprocess.Popen(['xdg-open',base+'/#'+token]);sys.exit()
+endpoint='/status';data=None
+if args[0]=='listen':endpoint='/settings';data={'listening':args[1]=='on'}
+elif args[0]=='pause':endpoint='/pause';data={}
+elif args[0]=='ptt':endpoint='/conversation';data={'unmute':True}
+elif args[0]=='stop':endpoint='/stop';data={}
+r=urllib.request.Request(base+endpoint,data=json.dumps(data).encode() if data is not None else None,headers={'X-Jinx-Token':token,'Content-Type':'application/json'})
+for _ in range(30):
+ try:
+  result=json.load(urllib.request.urlopen(r,timeout=20));break
+ except urllib.error.URLError as e:
+  if isinstance(e,urllib.error.HTTPError):raise SystemExit('Jinx request failed: '+str(e.code))
+  time.sleep(.1)
+if 'result' not in globals():raise SystemExit('Jinx is stopped or still starting')
+if args and args[0]=='status':print(json.dumps({k:result[k] for k in ['listening','phase','busy','muted']}))
+else:print('Jinx updated')

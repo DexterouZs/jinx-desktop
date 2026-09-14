@@ -1,0 +1,66 @@
+{
+  "spotify-launcher": {
+    "name": "Spotify",
+    "reviewed_at": "2026-09-09",
+    "explanation": "spotify-launcher installs and launches Spotify's normal graphical Linux desktop client. It is an open-source Arch launcher that obtains the proprietary client from Spotify's official release server and maintains it in the user's home directory. It is not spotify-player or ncspot, which are different terminal clients.",
+    "first_launch": "The repository download covers the launcher and dependencies. On first launch it additionally downloads Spotify's desktop client from Spotify; the client size is not included in this package estimate. Log into Spotify in its own window.",
+    "sources": [
+      {
+        "title": "spotify-launcher upstream documentation",
+        "url": "https://github.com/kpcyrd/spotify-launcher"
+      },
+      {
+        "title": "Arch Linux spotify-launcher package",
+        "url": "https://archlinux.org/packages/extra/x86_64/spotify-launcher/"
+      }
+    ]
+  },
+  "whatsapp-web": {
+    "name": "WhatsApp Web",
+    "reviewed_at": "2026-09-09",
+    "explanation": "WhatsApp offers desktop downloads for Windows and macOS, and directs other operating systems to official WhatsApp Web. On this Linux desktop Jinx can create a browser shortcut to https://web.whatsapp.com/. This is not an official native Linux client or a third-party wrapper.",
+    "first_launch": "Open WhatsApp from the application menu or ask Jinx to open WhatsApp. Link your phone yourself in the browser. Jinx does not read account content or send messages.",
+    "sources": [
+      {
+        "title": "Official WhatsApp downloads and browser option",
+        "url": "https://www.whatsapp.com/download"
+      },
+      {
+        "title": "Official WhatsApp Web",
+        "url": "https://web.whatsapp.com/"
+      }
+    ]
+  },
+  "discord": {
+    "name": "Discord",
+    "reviewed_at": "2026-09-09",
+    "explanation": "Discord provides a Linux desktop client. Jinx checks the configured Arch/CachyOS repositories for the exact discord package and prepares the actual dependency plan before offering installation.",
+    "first_launch": "The repository package currently contains a bootstrapper. First launch downloads the desktop client from Discord into your user configuration directory; that client download is additional to the repository estimate. Repository and running-client versions can differ. Log in yourself in Discord; Jinx does not read conversations or send messages.",
+    "sources": [
+      {
+        "title": "Discord desktop installation guide",
+        "url": "https://support.discord.com/hc/en-us/articles/360034561191-Desktop-Installation-Guide"
+      },
+      {
+        "title": "Installed repository launcher (verified locally on 2026-09-09)",
+        "url": "https://archlinux.org/packages/extra/x86_64/discord/"
+      }
+    ]
+  },
+  "zapzap": {
+    "name": "WhatsApp (ZapZap)",
+    "reviewed_at": "2026-09-09",
+    "explanation": "ZapZap is a standalone unofficial WhatsApp Web desktop client maintained by Rafael Tosta, built with PyQt6 and QtWebEngine. It has its own window, system tray and notifications. It is not an official Meta native Linux client. David explicitly requested an app instead of the earlier browser shortcut.",
+    "first_launch": "Open WhatsApp and link your phone with the QR code in the app. Jinx reads dictated messages back and waits for yes/send; live messaging verification is still in progress.",
+    "sources": [
+      {
+        "title": "ZapZap maintainer documentation",
+        "url": "https://github.com/rafatosta/zapzap/blob/main/README.md"
+      },
+      {
+        "title": "ZapZap 7.4.4 release",
+        "url": "https://github.com/rafatosta/zapzap/releases/tag/7.4.4"
+      }
+    ]
+  }
+}

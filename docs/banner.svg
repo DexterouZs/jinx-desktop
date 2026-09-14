@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420">
+<defs><linearGradient id="bg"><stop stop-color="#0c101b"/><stop offset="1" stop-color="#20213c"/></linearGradient><linearGradient id="accent"><stop stop-color="#69e3e9"/><stop offset="1" stop-color="#b5a0ff"/></linearGradient></defs>
+<rect width="1280" height="420" rx="28" fill="url(#bg)"/>
+<circle cx="1040" cy="210" r="140" fill="none" stroke="#b5a0ff" stroke-opacity=".15"/>
+<circle cx="1040" cy="210" r="112" fill="none" stroke="url(#accent)" stroke-width="3"/>
+<path d="M1013 143h64v77c0 30-16 46-43 46-22 0-36-11-42-29l23-10c3 10 10 15 19 15 13 0 19-7 19-24v-51h-40z" fill="url(#accent)"/>
+<text x="78" y="106" fill="#97a7be" font-family="sans-serif" font-size="16" letter-spacing="4">A PERSONAL COMPANION FOR LINUX</text>
+<text x="72" y="217" fill="#f2f5ff" font-family="sans-serif" font-size="100" font-weight="700" letter-spacing="-4">Jinx</text>
+<text x="78" y="275" fill="#bac5d7" font-family="sans-serif" font-size="26">A voice. A memory. A place on your desktop.</text>
+<text x="78" y="355" fill="#7cdece" font-family="monospace" font-size="16">LOCAL AI   ·   KDE PLASMA   ·   BUILT TO DO THINGS</text>
+</svg>
