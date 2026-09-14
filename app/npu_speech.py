@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """On-demand FastFlowLM speech recognition on the AMD NPU.
 
 Powered by https://github.com/ROCm/FastFlowLM. No speech is written to logs.
@@ -16,7 +17,7 @@ import time
 import urllib.request
 import uuid
 
-MODEL_PATH=Path.home()/'.local/share/jinx/models/flm'
+MODEL_PATH=models_dir()/'flm'
 class SpeechCancelled(Exception):pass
 class NpuUnavailable(RuntimeError):pass
 

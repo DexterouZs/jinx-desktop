@@ -1,12 +1,13 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 #!/usr/bin/env python3
 """Jinx: local Hermes assistant with a small, enforced tool boundary."""
 import os
 from pathlib import Path
-HOME=Path.home(); ROOT=Path(__file__).resolve().parent; STATE=Path(os.environ.get('JINX_STATE_DIR',HOME/'.local/state/jinx')); MODELS=HOME/'.local/share/jinx/models'
+HOME=Path.home(); ROOT=Path(__file__).resolve().parent; STATE=state_dir(); MODELS=models_dir()
 os.umask(0o077); STATE.mkdir(parents=True,exist_ok=True)
 os.environ['HERMES_HOME']=str(STATE/'hermes')
 os.environ['HERMES_DISABLE_TELEMETRY']='1'
-import json,time,secrets,threading,subprocess,urllib.request,datetime,wave,tempfile,queue,re
+import sys,json,time,secrets,threading,subprocess,urllib.request,datetime,wave,tempfile,queue,re
 import system_tools as admin
 import desktop_tools
 import shell_tools
@@ -68,7 +69,7 @@ from concurrent.futures import ThreadPoolExecutor
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
 TOKENFILE=STATE/'access.key'
 if not TOKENFILE.exists(): TOKENFILE.write_text(secrets.token_urlsafe(32))
-TOKEN=TOKENFILE.read_text().strip(); PORT=17341; MODEL=os.environ.get('JINX_MODEL','qwen3.8:27b-jinx')
+TOKEN=TOKENFILE.read_text().strip(); PORT=int(os.environ.get('JINX_PORT','17341')); MODEL=os.environ.get('JINX_MODEL','qwen3.8:27b-jinx')
 lock=threading.RLock(); work=threading.Lock(); audio_lock=threading.Lock()
 DEFAULT={'episodic_memory':True,'listening':False,'speak':True,'memory':'You prefer a warm British female assistant named Jinx. Ask for your name and preferences rather than assuming them.','reminders':[],'pending':[]}
 data=json.loads((STATE/'state.json').read_text()) if (STATE/'state.json').exists() else DEFAULT.copy()
@@ -81,7 +82,7 @@ memory.migrate_legacy(data['memory'])
 data.setdefault('thinking_sounds',True)
 data.setdefault('web_enabled',True)
 data.setdefault('screen_enabled',True)
-data.setdefault('voice','kokoro_emma');data.setdefault('voice_speed',1.0)
+data.setdefault('voice','breeze_tts2' if os.name=='nt' else 'kokoro_emma');data.setdefault('voice_speed',1.0)
 status={'phase':'Ready','busy':False,'error':'','last_heard':'','messages':[],'suspended':False,'voice_epoch':0,'ptt':False,'conversation':False,'audio_level':0.0,'partial':'','timings':{}}
 history=[]
 current_request=""
@@ -739,7 +740,10 @@ def play_audio(path,text,epoch,kind='reply',cancelled=lambda:False,spoken_text=N
   import numpy as np
   with wave.open(str(path),'rb') as wav:
    rate=wav.getframerate();samples=np.frombuffer(wav.readframes(wav.getnframes()),dtype='int16').astype('float32')
-  playback=subprocess.Popen(['pw-play',str(path)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+  if os.name=='nt':
+   from windows_audio import WavePlayer
+   playback=WavePlayer(path)
+  else:playback=subprocess.Popen(['pw-play',str(path)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
   started=time.monotonic()
   if kind=='reply':status['phase']='Speaking'
   else:status['filler_speaking']=True
@@ -1355,6 +1359,7 @@ class Handler(BaseHTTPRequestHandler):
    import mimetypes
    from urllib.parse import unquote,urlsplit
    base=ROOT/'avatar3d';path=(base/unquote(urlsplit(self.path).path.removeprefix('/avatar/'))).resolve()
+   if os.name=='nt' and path==base.resolve()/'avatars/jinx-character.glb':path=STATE/'assets/jinx-character.glb';base=STATE/'assets'
    if not path.is_relative_to(base.resolve()) or path.suffix not in ('.html','.js','.mjs','.css','.glb','.png','.jpg','.wasm') or not path.is_file():self.send({},404);return
    payload=path.read_bytes();self.send_response(200)
    kind='text/javascript' if path.suffix in ('.js','.mjs') else mimetypes.guess_type(str(path))[0] or 'application/octet-stream'
@@ -1469,4 +1474,8 @@ def main():
  threading.Thread(target=warm_selected_voice,daemon=True).start()
  threading.Thread(target=listen_loop,daemon=True).start();threading.Thread(target=scheduler,daemon=True).start();threading.Thread(target=sleep_watch,daemon=True).start()
  ThreadingHTTPServer(('127.0.0.1',PORT),Handler).serve_forever()
-if __name__=='__main__':main()
+if __name__=='__main__':
+ if os.name=='nt':
+  import windows_platform
+  windows_platform.install(sys.modules[__name__])
+ main()

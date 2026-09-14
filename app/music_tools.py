@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Spotify-only playback through its local MPRIS interface; no web account secrets."""
 import json,re,time
 from pathlib import Path
@@ -5,7 +6,7 @@ import system_tools as system
 BUS='org.mpris.MediaPlayer2.spotify'
 PATH='/org/mpris/MediaPlayer2'
 PLAYER='org.mpris.MediaPlayer2.Player.'
-CONFIG=Path.home()/'.config/jinx/spotify.json'
+CONFIG=config_dir()/'spotify.json'
 
 def request_text(text):
  text=re.sub(r'\s+',' ',str(text).replace(',', ' ').replace('’', "'").strip()).rstrip('.!?').strip()

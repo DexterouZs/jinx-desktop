@@ -4,6 +4,12 @@
 #include "breeze/voice.h"
 #include <memory>
 #include <stdexcept>
+#include <cstdlib>
+#if defined(_WIN32)
+#define JINX_EXPORT __declspec(dllexport)
+#else
+#define JINX_EXPORT
+#endif
 using namespace breeze;
 struct JinxBreeze {
     BreezeModel model;
@@ -13,8 +19,8 @@ struct JinxBreeze {
 };
 static thread_local std::string error;
 extern "C" {
-const char * jinx_breeze_error() { return error.c_str(); }
-void * jinx_breeze_init(const char * model, const char * reference,
+JINX_EXPORT const char * jinx_breeze_error() { return error.c_str(); }
+JINX_EXPORT void * jinx_breeze_init(const char * model, const char * reference,
                        const char * transcript, const char * cached) {
     try {
         auto c = std::make_unique<JinxBreeze>();
@@ -23,8 +29,10 @@ void * jinx_breeze_init(const char * model, const char * reference,
         m.backend.backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_IGPU, nullptr);
         if (!m.backend.backend)
             m.backend.backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_GPU, nullptr);
+        m.backend.is_gpu = m.backend.backend != nullptr;
+        if (!m.backend.backend && std::getenv("JINX_BREEZE_ALLOW_CPU"))
+            m.backend.backend = ggml_backend_init_by_type(GGML_BACKEND_DEVICE_TYPE_CPU, nullptr);
         if (!m.backend.backend) throw std::runtime_error("Breeze Vulkan GPU is unavailable");
-        m.backend.is_gpu = true;
         m.backend.alloc = ggml_gallocr_new(ggml_backend_get_default_buffer_type(m.backend.backend));
         if (!m.gg.load(model,m.backend)) throw std::runtime_error("Breeze weights could not be loaded");
         m.cfg = parse_config(m.gg);
@@ -46,8 +54,8 @@ void * jinx_breeze_init(const char * model, const char * reference,
         return c.release();
     } catch (const std::exception & e) { error = e.what(); return nullptr; }
 }
-void jinx_breeze_free(void * ctx) { delete static_cast<JinxBreeze *>(ctx); }
-int jinx_breeze_generate(void * ctx, const char * text, int chunk_first, int chunk_max,
+JINX_EXPORT void jinx_breeze_free(void * ctx) { delete static_cast<JinxBreeze *>(ctx); }
+JINX_EXPORT int jinx_breeze_generate(void * ctx, const char * text, int chunk_first, int chunk_max,
                         int (*callback)(const float *, int)) {
     try {
         auto & c = *static_cast<JinxBreeze *>(ctx);

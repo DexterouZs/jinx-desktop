@@ -1,5 +1,5 @@
 """On-demand GPU speech over private pipes; expires after 60 idle seconds."""
-import os,sys,json,select,time,wave,base64
+import os,sys,json,time,wave,base64,threading,queue
 
 def main():
  # Native libraries use printf too. Reserve a separate FD for the JSON protocol.
@@ -10,8 +10,14 @@ def main():
  from breeze_cpp_runtime import Runtime
  runtime=Runtime()
  try:
-  while select.select([sys.stdin],[],[],60)[0]:
-   line=sys.stdin.readline()
+  requests=queue.Queue(maxsize=4)
+  def read_requests():
+   for line in sys.stdin:requests.put(line)
+   requests.put(None)
+  threading.Thread(target=read_requests,daemon=True).start()
+  while True:
+   try:line=requests.get(timeout=60)
+   except queue.Empty:break
    if not line:break
    try:
     req=json.loads(line);text=str(req['text']).strip();speed=float(req['speed'])

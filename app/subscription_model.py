@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Official Codex app-server transport using ChatGPT plan authentication only."""
 import json
 import os
@@ -67,7 +68,7 @@ class Subscription:
             env = dict(os.environ)
             for key in ('OPENAI_API_KEY', 'CODEX_API_KEY', 'CODEX_ACCESS_TOKEN'):
                 env.pop(key, None)
-            cwd = Path.home()/'.local/state/jinx/subscription-workspace'
+            cwd = state_dir()/'subscription-workspace'
             cwd.mkdir(parents=True, exist_ok=True, mode=0o700)
             process = subprocess.Popen(server_command(), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,

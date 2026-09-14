@@ -1,23 +1,27 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Small private ctypes adapter; loaded only in the isolated voice worker."""
 import ctypes as C
 import hashlib
+import os
 from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent
-MODELS = Path.home()/'.local/share/jinx/models/breeze-cpp'
+MODELS = models_dir()/'breeze-cpp'
 TRANSCRIPT = "It's nice to dream, but I know my whole life ain't coming back."
 CALLBACK = C.CFUNCTYPE(C.c_int, C.POINTER(C.c_float), C.c_int)
 
 class Runtime:
  def __init__(self):
-  self.lib = C.CDLL(str(MODELS/'libjinx-breeze.so'))
+  library = Path(os.environ.get('JINX_BREEZE_LIBRARY', MODELS/('jinx-breeze.dll' if os.name=='nt' else 'libjinx-breeze.so')))
+  self.dll_directory = os.add_dll_directory(str(library.parent)) if os.name=='nt' else None
+  self.lib = C.CDLL(str(library))
   self.lib.jinx_breeze_init.argtypes = [C.c_char_p]*4
   self.lib.jinx_breeze_init.restype = C.c_void_p
   self.lib.jinx_breeze_error.restype = C.c_char_p
   self.lib.jinx_breeze_generate.argtypes = [C.c_void_p,C.c_char_p,C.c_int,C.c_int,CALLBACK]
   self.lib.jinx_breeze_free.argtypes = [C.c_void_p]
-  reference = ROOT/'voice-jinx/reference-short.wav'
+  reference = Path(os.environ.get('JINX_VOICE_REFERENCE',ROOT/'voice-jinx/reference-short.wav'))
   digest = hashlib.sha256(reference.read_bytes()+TRANSCRIPT.encode()).hexdigest()[:20]
   cache = MODELS/('jinx-'+digest+'.breeze')
   self.context = self.lib.jinx_breeze_init(

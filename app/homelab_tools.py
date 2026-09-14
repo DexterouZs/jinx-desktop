@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Reachability checks for David's own network services — read-only.
 
 Answers "is the NAS up?" without credentials and without the model. This
@@ -13,7 +14,7 @@ import json,socket,urllib.error,urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-CONFIG=Path.home()/'.local/state/jinx/homelab.json'
+CONFIG=state_dir()/'homelab.json'
 
 DEFAULT_SERVICES=[]  # Configure private services in local state, never in source.
 

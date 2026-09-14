@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Private, on-demand AMD GPU/CPU voice worker. JSON lines on stdin/stdout; no server.
 Uses only local model files. Exits after one idle minute or parent closes pipe.
 """
@@ -6,7 +7,7 @@ from pathlib import Path
 os.environ.update(HF_HUB_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1', DO_NOT_TRACK='1',
                   OMP_WAIT_POLICY='PASSIVE', KMP_BLOCKTIME='0', TOKENIZERS_PARALLELISM='false')
 ROOT=Path(__file__).resolve().parent
-MODELS=Path.home()/'.local/share/jinx/models/f5-tts'
+MODELS=models_dir()/'f5-tts'
 
 def main():
  # Redirect library chatter, including reference text, away from the protocol.

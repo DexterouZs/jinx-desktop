@@ -1,8 +1,9 @@
+from runtime_paths import state_dir
 """Jinx's local desktop/admin tools. Model text is never executed as shell code."""
 import configparser,datetime,difflib,json,re,secrets,subprocess,time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-HOME=Path.home();ROOT=Path(__file__).resolve().parent;STATE=HOME/'.local/state/jinx'
+HOME=Path.home();ROOT=Path(__file__).resolve().parent;STATE=state_dir()
 APP_SPECS={
  'calendar':('Morgen','jinx-morgen.desktop',['calendar','my calendar','morgen','morgan']),
  'whatsapp':('WhatsApp (ZapZap)','jinx-whatsapp.desktop',['whatsapp','whats app','zapzap','whatsapp app']),

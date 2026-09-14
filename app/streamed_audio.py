@@ -21,6 +21,9 @@ class Buffer:
 
 def play(buffer,cancelled,started,progress,generated,ended):
  """Return only after audio drains. Never arm a read-back on partial playback."""
+ if os.name=='nt':
+  from windows_audio import stream_play
+  return stream_play(buffer,cancelled,started,progress,generated,ended)
  process=None;notified=False;sent=0
  try:
   while not buffer.ready():

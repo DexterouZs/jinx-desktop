@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Bounded Home Assistant control: read state and act on reviewed domains only.
 
 Follows the same shape as desktop_tools/music_tools — a deterministic
@@ -17,7 +18,7 @@ Boundaries, deliberately narrow:
 import json,re,threading,time,urllib.error,urllib.request
 from pathlib import Path
 
-STATE=Path.home()/'.local/state/jinx'
+STATE=state_dir()
 CONFIG=STATE/'home-assistant.json'
 TOKENFILE=STATE/'home-assistant.token'
 

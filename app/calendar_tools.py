@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Local Merkuro/Akonadi calendar, with confirmed idempotent event creation."""
 import datetime as dt
 import json
@@ -11,7 +12,7 @@ from zoneinfo import ZoneInfo
 import icalendar
 import recurring_ical_events
 
-CONFIG=Path.home()/'.local/state/jinx/calendar.json'
+CONFIG=state_dir()/'calendar.json'
 CALENDAR_FILE=Path.home()/'.local/share/jinx/calendar/Jinx Calendar.ics'
 ZONE=ZoneInfo('Europe/Paris')
 

@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Local personal facts and episodes: FTS5 + optional local vector retrieval."""
 import datetime
 import json
@@ -11,7 +12,7 @@ from contextlib import contextmanager
 
 import numpy as np
 
-STATE = Path(os.environ.get('JINX_STATE_DIR', Path.home() / '.local/state/jinx'))
+STATE = Path(os.environ.get('JINX_STATE_DIR', state_dir()))
 # Conservative: seven or more digits, allowing common phone separators.
 PHONE = re.compile(r'(?<!\w)\+?\d(?:[\s()./-]*\d){6,}(?!\w)')
 SECRET = re.compile(r'\b(?:password|passphrase|api[ _-]?key|access[ _-]?token|secret[ _-]?key|recovery[ _-]?code)\b\s*(?:is\b|=|:)|\bBearer\s+\S+|\bsk-[A-Za-z0-9_-]{12,}',re.I)

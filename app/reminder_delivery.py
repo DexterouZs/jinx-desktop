@@ -1,5 +1,7 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
+from file_locks import fcntl
 """Short-lived desktop reminders, independent of AI/model/avatar services."""
-import datetime as dt,fcntl,json,os,subprocess
+import datetime as dt,json,os,subprocess
 from pathlib import Path
 
 def deliver(state,item):
@@ -43,6 +45,6 @@ def due_items(state,now):
 
 def main():
  import time
- os.umask(0o077);state=Path.home()/'.local/state/jinx'
+ os.umask(0o077);state=state_dir()
  for item in due_items(state,time.time()):deliver(state,item)
 if __name__=='__main__':main()

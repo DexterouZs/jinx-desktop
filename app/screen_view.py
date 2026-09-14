@@ -1,9 +1,10 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """One explicitly requested screen snapshot; local OCR/vision, no action tools."""
 import base64, http.client, io, json, os, re, secrets, socket, subprocess, tempfile, threading, time
 from pathlib import Path
 from PIL import Image
 
-RUNTIME=Path(os.environ.get('XDG_RUNTIME_DIR',f'/run/user/{os.getuid()}'))/'jinx-attention'
+RUNTIME=runtime_dir()/'jinx-attention'
 
 class Cancelled(Exception):pass
 

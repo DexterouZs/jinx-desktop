@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Silero VAD ONNX streaming wrapper, adapted from the upstream MIT wrapper.
 https://github.com/snakers4/silero-vad/blob/master/src/silero_vad/utils_vad.py
 Only NumPy/ONNX Runtime are required; no Torch import in the microphone process.
@@ -11,7 +12,7 @@ def session():
  options=ort.SessionOptions();options.intra_op_num_threads=1;options.inter_op_num_threads=1
  options.add_session_config_entry('session.intra_op.allow_spinning','0')
  options.add_session_config_entry('session.inter_op.allow_spinning','0')
- return ort.InferenceSession(str(Path.home()/'.local/share/jinx/models/silero-vad/silero_vad.onnx'),options,providers=['CPUExecutionProvider'])
+ return ort.InferenceSession(str(models_dir()/'silero-vad/silero_vad.onnx'),options,providers=['CPUExecutionProvider'])
 class SpeechDetector:
  def __init__(self):
   self.model=session();self.state=np.zeros((2,1,128),dtype='float32');self.context=np.zeros((1,64),dtype='float32');self.pending=np.empty(0,dtype='float32')

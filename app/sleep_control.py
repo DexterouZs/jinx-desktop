@@ -1,8 +1,10 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
+from file_locks import fcntl
 """Skull control: stop AI and pause wallpaper, with a light native wake button."""
-import fcntl,importlib.machinery,importlib.util,json,os,subprocess,sys
+import importlib.machinery,importlib.util,json,os,subprocess,sys
 from pathlib import Path
 os.umask(0o077)
-RUNTIME=Path(os.environ.get('XDG_RUNTIME_DIR',f'/run/user/{os.getuid()}'))
+RUNTIME=runtime_dir()
 FLAG=RUNTIME/'jinx-skull-sleep.json'
 def desktop_controls():
  loader=importlib.machinery.SourceFileLoader('desktop_controls',str(Path.home()/'.local/bin/jinx-desktop-control'))

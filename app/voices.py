@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Offline cloned and British speech; AMD GPU/CPU inference with Piper fallback."""
 import threading,wave
 import quick_speech
@@ -7,7 +8,7 @@ from jinx_voice import JinxVoice,VoiceCancelled
 from breeze_voice import BreezeVoice
 from pathlib import Path
 import numpy as np
-MODELS=Path.home()/'.local/share/jinx/models'
+MODELS=models_dir()
 CHOICES={'breeze_tts2':'Breeze TTS2 · GPU streaming','jinx_local':'Jinx · local voice clone','kokoro_emma':'Emma · natural British','kokoro_isabella':'Isabella · soft British','piper_alba':'Alba · lightweight British'}
 class Voices:
  def __init__(self):self.kokoro=None;self.piper=None;self.german=None;self.jinx=JinxVoice();self.breeze=BreezeVoice();self.lock=threading.Lock();self.cache=OrderedDict();self.cache_bytes=0

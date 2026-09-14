@@ -1,3 +1,4 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Bounded OpenAI streaming turns, with fallback only before observable work."""
 import json
 import os
@@ -5,7 +6,7 @@ import time
 import network_state
 from pathlib import Path
 
-KEY_FILE = Path.home() / '.local/state/jinx/openai.key'
+KEY_FILE = state_dir()/'openai.key'
 MODEL = os.environ.get('JINX_OPENAI_MODEL', 'gpt-5.4-nano')
 
 

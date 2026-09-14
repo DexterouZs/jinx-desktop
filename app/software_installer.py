@@ -1,9 +1,11 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
+from file_locks import fcntl
 """Reviewed repository installs. The model gets no shell or privilege credential."""
-import configparser, datetime, fcntl, hashlib, json, os, re, secrets, subprocess, sys, time
+import configparser, datetime,  hashlib, json, os, re, secrets, subprocess, sys, time
 from pathlib import Path
 import reviewed_apps
 ROOT=Path(__file__).resolve().parent
-STATE=Path.home()/'.local/state/jinx'
+STATE=state_dir()
 JOBS=STATE/'installs'
 NAME=re.compile(r'[a-z0-9][a-z0-9@._+\-]{0,99}\Z')
 REPO=re.compile(r'(?:cachyos(?:-[a-z0-9-]+)?|core|extra|multilib)\Z')
@@ -249,7 +251,7 @@ def jobs():
 
 def request_review(identifier):
  if not re.fullmatch(r'[a-f0-9]{16}',identifier):raise ValueError('Invalid review ID')
- ready=Path(os.environ.get('XDG_RUNTIME_DIR',f'/run/user/{os.getuid()}'))/'jinx-install-review'/(identifier+'.ready')
+ ready=runtime_dir()/'jinx-install-review'/(identifier+'.ready')
  def visible():
   try:
    pid=json.loads(ready.read_text())['pid']

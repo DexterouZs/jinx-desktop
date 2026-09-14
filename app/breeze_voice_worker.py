@@ -1,8 +1,9 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """On-demand Breeze TTS2; same private JSON-line protocol as the main voice."""
 import os,sys,json,select,time,contextlib
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent
-SOURCE=Path.home()/'.local/share/jinx/models/breeze-tts-2-src'
+SOURCE=models_dir()/'breeze-tts-2-src'
 sys.path.insert(0,str(SOURCE))
 def main():
  with contextlib.redirect_stdout(sys.stderr):
@@ -13,7 +14,7 @@ def main():
   from breeze_infer.templates import prepare_inputs,get_template,select_template_name
   from models.fast_streaming import FastBreezeStreamingRuntime,FastStreamingConfig
   torch.set_num_threads(4);torch.set_num_interop_threads(1)
-  tokenizer,model,codec=load_runtime(Path.home()/'.local/share/jinx/models/breeze-tts-2',device=resolve_device(),attn_implementation='eager')
+  tokenizer,model,codec=load_runtime(models_dir()/'breeze-tts-2',device=resolve_device(),attn_implementation='eager')
   update_generation_config_for_breeze(model)
   runtime=FastBreezeStreamingRuntime(model,codec,FastStreamingConfig(max_new_tokens=800,max_seq_len=2048,fast_all=False,repetition_penalty=1.1),tokenizer=tokenizer)
  while select.select([sys.stdin],[],[],60)[0]:

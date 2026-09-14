@@ -1,9 +1,10 @@
+from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Fixed Morgen API adapter. Event writes require the application's yes/no gate."""
 import datetime as dt
 import json,os,re,urllib.request,urllib.parse,urllib.error
 from pathlib import Path
 from zoneinfo import ZoneInfo
-STATE=Path.home()/'.local/state/jinx'
+STATE=state_dir()
 ZONE=ZoneInfo('Europe/Paris')
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args,**kwargs):raise ValueError('Unexpected redirect from Morgen')
