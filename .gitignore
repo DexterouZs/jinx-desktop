@@ -34,3 +34,22 @@ windows/ASSETS.txt
 build/
 *.spec
 jinx-smoke.json
+
+# Private user profiles, account data and credentials never belong in a release.
+*.token
+*.p12
+*.pfx
+personal-profile/
+whatsapp-edge/
+firefox-profile/
+auth.json
+credentials.json
+secrets.json
+state.json
+settings.json
+contacts.json
+cookies.txt
+cookies.sqlite
+Login Data
+Cookies
+hermes/

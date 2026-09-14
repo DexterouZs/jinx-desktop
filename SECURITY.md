@@ -1,7 +1,11 @@
-# Security and privacy
+# Private data stays on your computer
 
-Report suspected vulnerabilities privately to the repository owner. Do not post credentials, account tokens, private messages or exploitable personal configuration in an issue.
+Public Jinx source and releases must contain no API keys, passwords, browser sessions, account configurations, personal memory databases or chat history. Each person connects their own accounts after installation.
 
-Jinx has access to tools running as the current user. The terminal denylist is not a sandbox. Imported pages, logs and memories must remain data, never instructions authorising actions. Screen access must be explicit and visible; messaging/calendar operations retain their read-back gates.
+Private NAS transfers may contain explicitly selected avatar and voice assets. They must not contain credentials or browser profiles. Never upload a personal backup as a public release asset.
 
-Releases are built from an allowlisted source tree and checked for common secret formats. That check is defence in depth, not proof that arbitrary private files are safe to publish. Models and optional service integrations retain their own trust and privacy requirements.
+Before publishing, run `python scripts/check-release.py --history --local-secrets` on the maintainer's computer. This checks source/history against local credential values without logging the values. Enable the local pre-push guard with `git config core.hooksPath .githooks`.
+
+GitHub secret scanning and push protection provide additional checks for supported secret types. CI scans complete Git history with Gitleaks. Detection is a safeguard, not a guarantee that arbitrary passwords will be recognised.
+
+If a credential is ever exposed, revoke or rotate it at its provider promptly. Removing a file from the latest commit does not remove copies from history or downloads. Report security issues privately; never paste a real credential into a public issue or build log.
