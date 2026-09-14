@@ -1,0 +1,3 @@
+#!/bin/sh
+# Local-only guard. It emits file names and categories, never credential contents.
+exec python3 scripts/check-release.py --history --local-secrets
