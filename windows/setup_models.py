@@ -35,6 +35,8 @@ def main():
   if spec['path']=='ggml-base.bin':continue
   download(spec['url'],models/spec['path'],spec['sha256'])
  download('https://huggingface.co/HoppouAI/Breeze-TTS-2.cpp/resolve/main/breeze-tts-2-q8_0.gguf',models/'breeze-cpp/breeze-tts-2-q8_0.gguf','a02bcc4b69b0601032727f8040c4942149b1b73aa0f69022fe5aaa6a8f0ef879')
+ from model_assets import wake_word
+ wake_word(models)
  print('Preparing multilingual speech recognition…',flush=True)
  from huggingface_hub import snapshot_download
  snapshot_download('Systran/faster-whisper-base',local_dir=models/'whisper-base')
@@ -48,4 +50,15 @@ def main():
   p=Path(folder)/'Modelfile';p.write_text('FROM hf.co/ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF:IQ2_S\nPARAMETER num_ctx 65536\n')
   subprocess.run([ollama,'create','qwen3.8:27b-jinx','-f',str(p)],env=env,check=True)
  print('Models are ready. Import your private NAS profile for your original voice and avatar.',flush=True)
-if __name__=='__main__':main()
+def starter():
+ row=json.loads((ROOT/'starter-avatar.json').read_text())
+ download(row['url'],state_dir()/'assets/jinx-character.glb',row['sha256'])
+ for spec in json.loads((ROOT/'assets.json').read_text()):
+  if spec['path'].startswith('en_GB-alba'):
+   download(spec['url'],models_dir()/spec['path'],spec['sha256'])
+ path=state_dir()/'state.json';state=json.loads(path.read_text());state['voice']='piper_alba'
+ temp=path.with_suffix('.tmp');temp.write_text(json.dumps(state));os.replace(temp,path)
+ print('Starter avatar and Alba voice are ready. Prepare the AI models next.',flush=True)
+if __name__=='__main__':
+ if '--starter' in sys.argv:starter()
+ else:main()

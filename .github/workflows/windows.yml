@@ -15,7 +15,6 @@ jobs:
       - name: Check source and core behaviour
         run: |
           python scripts/check-release.py
-          python -m unittest discover -s windows -p test_core.py -v
           python -m unittest discover -s windows -p test_parity.py -v
       - name: Install build dependencies
         run: |
@@ -54,6 +53,12 @@ jobs:
           $report = Get-Content smoke.json -Raw | ConvertFrom-Json
           if (-not $report.ui -or -not $report.shared_backend -or -not $report.breeze_library) { throw 'UI/speech check failed' }
           Get-Content smoke.json
+      - name: Verify real Breeze generation and PCM streaming
+        shell: pwsh
+        run: |
+          $env:JINX_VOICE_TEST_REPORT = "$pwd/voice-runtime-smoke.json"
+          & "$pwd/dist/Jinx/runtime/python.exe" "$pwd/dist/Jinx/windows/test_voice_runtime.py"
+          if ($LASTEXITCODE -ne 0) { throw 'Native Breeze generation failed' }
       - name: Compile installer
         shell: pwsh
         run: |
@@ -87,6 +92,7 @@ jobs:
           $lines | Set-Content dist/SHA256SUMS-windows.txt -Encoding ascii
           python -m pip freeze | Set-Content dist/windows-build-dependencies.txt
           Copy-Item smoke.json dist/windows-smoke.json
+          Copy-Item voice-runtime-smoke.json dist/voice-runtime-smoke.json
       - uses: actions/upload-artifact@v4
         with:
           name: jinx-windows-preview
@@ -96,4 +102,5 @@ jobs:
             dist/SHA256SUMS-windows.txt
             dist/windows-build-dependencies.txt
             dist/windows-smoke.json
+            dist/voice-runtime-smoke.json
           retention-days: 14

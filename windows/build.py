@@ -12,11 +12,6 @@ root = Path(__file__).resolve().parents[1]
 win = root/'windows'
 if sys.platform != 'win32':
     raise SystemExit('Build Windows binaries on Windows; use the Windows installer GitHub workflow.')
-web = win/'web'
-web.mkdir(exist_ok=True)
-shutil.copytree(root/'app/avatar3d/vendor', web/'vendor', dirs_exist_ok=True)
-shutil.copytree(root/'app/avatar3d/node_modules', web/'node_modules', dirs_exist_ok=True)
-shutil.copy2(root/'starter-avatar.json', win/'starter-avatar.json')
 shutil.copy2(root/'docs/jinx-launcher.jpg', win/'jinx-launcher.jpg')
 # Standard application-icon rasterisation of the existing portrait and circular frame.
 icon = QImage(256, 256, QImage.Format.Format_ARGB32); icon.fill(Qt.GlobalColor.transparent)
@@ -40,9 +35,9 @@ shutil.copy2(root/'docs/WINDOWS.md', win/'WINDOWS.txt')
 shutil.copy2(root/'docs/ASSETS.md', win/'ASSETS.txt')
 command = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--windowed', '--onedir',
     '--name', 'Jinx', '--icon', str(win/'jinx.ico'), '--distpath', str(root/'dist'), '--workpath', str(root/'build/windows'),
-    '--specpath', str(root/'build'), '--collect-all', 'faster_whisper', '--collect-all', 'sounddevice',
+    '--specpath', str(root/'build'),
     '--hidden-import', 'win32com.client', '--hidden-import', 'pythoncom']
-for name in ('avatar.html', 'jinx.ico', 'jinx-launcher.jpg', 'starter-avatar.json', 'LICENSE.txt', 'WINDOWS.txt', 'ASSETS.txt', 'web', 'third-party-licenses'):
+for name in ('jinx.ico', 'jinx-launcher.jpg', 'LICENSE.txt', 'WINDOWS.txt', 'ASSETS.txt', 'third-party-licenses'):
     command.extend(['--add-data', str(win/name) + ':' + (name if (win/name).is_dir() else '.')])
 subprocess.run(command + [str(win/'desktop_host.py')], check=True, cwd=root)
 
@@ -58,13 +53,15 @@ shutil.copytree(base/'DLLs',runtime/'DLLs',dirs_exist_ok=True)
 shutil.copytree(base/'Lib',runtime/'Lib',dirs_exist_ok=True,ignore=shutil.ignore_patterns('site-packages','__pycache__','test','idlelib','tkinter','ensurepip'))
 shutil.copytree(base/'Lib/site-packages',runtime/'Lib/site-packages',dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','pip','pip-*','PyInstaller','pyinstaller*'))
 # Remove editable install links and user customisations: only the pinned source is used.
-for p in (runtime/'Lib/site-packages').glob('*.pth'):p.unlink()
+for p in (runtime/'Lib/site-packages').glob('*.pth'):
+    if p.name not in ('pywin32.pth','distutils-precedence.pth'):p.unlink()
 for p in (runtime/'Lib/site-packages').glob('sitecustomize*'):p.unlink()
 shutil.copytree(root/'app',payload/'app',ignore=shutil.ignore_patterns('__pycache__','test_*.py','native','installer','voice-jinx','*.wav','*.glb','*.key','*.token'),dirs_exist_ok=True)
 shutil.copytree(root/'hermes',payload/'hermes',ignore=shutil.ignore_patterns('.git','.github','website','tests','__pycache__'),dirs_exist_ok=True)
 shutil.copytree(root/'dist/voice',payload/'voice',dirs_exist_ok=True)
 windows=payload/'windows';windows.mkdir(exist_ok=True)
-for name in ('backend_main.py','setup_models.py','personal_profile.py'):shutil.copy2(win/name,windows/name)
+for name in ('backend_main.py','setup_models.py','personal_profile.py','test_voice_runtime.py','reminder_check.py'):shutil.copy2(win/name,windows/name)
 shutil.copy2(root/'assets.json',payload/'assets.json')
+shutil.copy2(root/'starter-avatar.json',payload/'starter-avatar.json')
 shutil.copy2(root/'docs/jinx-launcher.jpg',payload/'app/avatar3d/jinx-icon.jpg')
 shutil.copy2(root/'app/PERSONALITY.md',payload/'app/PERSONALITY.md')

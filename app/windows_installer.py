@@ -55,7 +55,10 @@ def install(module):
     if row.get('state') in ('starting','installing'):
      import psutil
      if not psutil.pid_exists(row.get('pid',0)):
-      row.update(state='uncertain',message='The installer stopped before verification. Check installed apps before retrying.');module.atomic(p,row)
+      found=installed(row['package']) if row.get('package') in PACKAGES.values() else None
+      if found and found==row.get('expected_version'):row.update(state='installed',version=found,message='Installation verified after reconnecting.')
+      else:row.update(state='uncertain',message='The installer stopped before verification. Check installed apps before retrying.')
+      module.atomic(p,row)
     results.append({k:row.get(k) for k in ('id','proposal_id','package','state','message','version','updated_at')})
    except (OSError,ValueError):pass
   return results
@@ -67,13 +70,13 @@ def install(module):
    if fresh.get('catalog_fingerprint')!=saved.get('catalog_fingerprint'):raise ValueError('The package version changed. Ask for a new installation preview.')
    identifier=secrets.token_hex(12);path=module.JOBS/(identifier+'.json')
    import os
-   job={'id':identifier,'proposal_id':proposal_id,'package':fresh['package'],'state':'starting','message':'Starting the Windows installer…','updated_at':time.time(),'pid':os.getpid()}
+   job={'id':identifier,'proposal_id':proposal_id,'package':fresh['package'],'state':'starting','message':'Starting the Windows installer…','updated_at':time.time(),'pid':os.getpid(),'expected_version':fresh['version']}
    module.atomic(path,job)
    def work():
     def update(state,message):job.update(state=state,message=message,updated_at=time.time());module.atomic(path,job)
     try:
      update('installing','Installing the reviewed version; respond to Windows UAC if shown.')
-     process=subprocess.Popen(['winget.exe','install','--id',fresh['package'],'--exact','--source','winget','--version',fresh['version'],'--interactive','--accept-source-agreements','--accept-package-agreements'],creationflags=getattr(subprocess,'CREATE_NEW_CONSOLE',0))
+     process=subprocess.Popen(['winget.exe','install','--id',fresh['package'],'--exact','--source','winget','--version',fresh['version'],'--interactive','--accept-source-agreements','--accept-package-agreements'],creationflags=getattr(subprocess,'CREATE_NEW_CONSOLE',0)|getattr(subprocess,'CREATE_BREAKAWAY_FROM_JOB',0))
      job['pid']=process.pid;module.atomic(path,job)
      code=process.wait();found=installed(fresh['package'])
      if code or found is None:raise ValueError('WinGet finished without verifying this app. Check the installer window before retrying.')

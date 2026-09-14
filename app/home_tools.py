@@ -1,3 +1,4 @@
+import private_secrets
 from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Bounded Home Assistant control: read state and act on reviewed domains only.
 
@@ -42,7 +43,7 @@ def catalog():
 
 
 def configured():
- return TOKENFILE.exists() and CONFIG.exists()
+ return private_secrets.exists(TOKENFILE) and CONFIG.exists()
 
 
 def settings():
@@ -58,7 +59,7 @@ def base_url():
 
 def _token():
  # Read privately, use once, never retain in module state.
- return TOKENFILE.read_text().strip()
+ return private_secrets.read(TOKENFILE)
 
 
 class HomeError(Exception):

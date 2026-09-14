@@ -49,6 +49,7 @@ Section "Jinx"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Jinx" "NoRepair" 1
 SectionEnd
 Section "Uninstall"
+  nsExec::ExecToLog 'schtasks /Delete /TN "Jinx personal reminders" /F'
   SetShellVarContext current
   Delete "$SMPROGRAMS\Jinx\Jinx.lnk"
   Delete "$SMPROGRAMS\Jinx\Uninstall Jinx.lnk"
@@ -61,6 +62,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\voice"
   RMDir /r "$INSTDIR\windows"
   Delete "$INSTDIR\assets.json"
+  Delete "$INSTDIR\starter-avatar.json"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Jinx"

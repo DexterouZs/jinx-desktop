@@ -1411,6 +1411,7 @@ class Handler(BaseHTTPRequestHandler):
       if status['busy'] or status['ptt'] or conversation_gate.locked():raise ValueError('Finish the current conversation before switching language')
       data['language_mode']=d['language_mode']
      if 'speech_engine' in d:
+      if os.name=='nt' and d['speech_engine']!='cpu':raise ValueError('Windows currently uses local CPU speech recognition.')
       if d['speech_engine'] not in ('npu','cpu'):raise ValueError('Choose NPU or CPU speech recognition')
       if status['busy'] or status['ptt'] or conversation_gate.locked():raise ValueError('Finish the current conversation before switching speech recognition')
       data['speech_engine']=d['speech_engine']

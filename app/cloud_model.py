@@ -1,3 +1,4 @@
+import private_secrets
 from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Bounded OpenAI streaming turns, with fallback only before observable work."""
 import json
@@ -15,7 +16,7 @@ def api_key():
     if key:
         return key
     try:
-        return KEY_FILE.read_text().strip()
+        return private_secrets.read(KEY_FILE)
     except OSError:
         return ''
 

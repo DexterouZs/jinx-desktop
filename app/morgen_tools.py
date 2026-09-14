@@ -1,3 +1,4 @@
+import private_secrets
 from runtime_paths import state_dir, models_dir, config_dir, runtime_dir
 """Fixed Morgen API adapter. Event writes require the application's yes/no gate."""
 import datetime as dt
@@ -14,7 +15,7 @@ def config():
  try:
   c=json.loads((STATE/'morgen-calendar.json').read_text())
   if not all(isinstance(c.get(k),str) and c[k] for k in ['id','accountId','name']):raise ValueError()
-  if not (STATE/'morgen-api.key').is_file():raise ValueError()
+  if not private_secrets.exists(STATE/'morgen-api.key'):raise ValueError()
   return c
  except (OSError,ValueError):raise ValueError('Jinx still needs its Morgen API connection. Complete the private Morgen connection setup.')
 
@@ -25,7 +26,7 @@ class MorgenHTTPError(ValueError):
 
 def api(path,params=None,body=None):
  if path not in ['calendars/list','events/list','events','events/create','events/delete']:raise ValueError('Unsupported calendar operation')
- try:key=(STATE/'morgen-api.key').read_text().strip()
+ try:key=private_secrets.read(STATE/'morgen-api.key')
  except OSError:raise ValueError('Morgen API key is not configured')
  url='https://api.morgen.so/v3/'+path
  if params:url+='?'+urllib.parse.urlencode(params)

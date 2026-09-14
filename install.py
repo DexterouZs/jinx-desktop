@@ -18,7 +18,7 @@ HERMES = 'b2aa855b626ff8688eb34b95c60ee8b6a4af3679'
 PACKAGES = ['uv','git','cmake','ninja','nodejs','npm','qt6-webengine',
             'qt6-declarative','qt6-tools','layer-shell-qt','portaudio','pipewire',
             'wireplumber','ffmpeg','whisper-cpp','ollama','libnotify',
-            'tesseract','tesseract-data-eng']
+            'tesseract','tesseract-data-eng','vulkan-headers','vulkan-icd-loader','glslc']
 
 
 def run(argv, **kwargs):
@@ -155,17 +155,35 @@ Restart=on-failure
     if not (state/'access.key').exists():write(state/'access.key',secrets.token_hex(32)+'\n',0o600)
     # Existing credentials/settings/memory are never overwritten.
     if not (state/'state.json').exists():
-        data={'ai_mode':'local_fast','speech_engine':'cpu','voice':'piper_alba','voice_speed':1.0,
+        original_voice=(state/'assets/reference-short.wav').is_file() and (home/'.local/share/jinx/models/breeze-cpp/libjinx-breeze.so').is_file()
+        data={'ai_mode':'local_fast','speech_engine':'cpu','voice':'breeze_tts2' if original_voice else 'piper_alba','voice_speed':1.0,
               'listening':False,'speak':True,'memory':'','reminders':[],'pending':[],
               'episodic_memory':True,'learn_preferences':True}
         write(state/'state.json',json.dumps(data,indent=2)+'\n',0o600)
     config=state/'hermes/config.yaml';config.parent.mkdir(parents=True,exist_ok=True)
     if not config.exists():write(config,'tools:\n  tool_search:\n    enabled: off\n',0o600)
+    reminder=f'''[Unit]
+Description=Jinx due reminders (no AI or avatar)
+[Service]
+Type=oneshot
+ExecStart={unit_path(target/'.venv/bin/python')} {unit_path(target/'reminder_delivery.py')}
+WorkingDirectory={unit_path(target)}
+UMask=0077
+NoNewPrivileges=yes
+'''
+    timer='[Unit]\nDescription=Check Jinx reminders each minute\n[Timer]\nOnCalendar=*-*-* *:*:00\nPersistent=true\nAccuracySec=5s\n[Install]\nWantedBy=timers.target\n'
+    write(units/'jinx-reminders.service',reminder)
+    write(units/'jinx-reminders.timer',timer)
     run(['systemctl','--user','daemon-reload'])
+    run(['systemctl','--user','enable','--now','jinx-reminders.timer'])
 
 
 def assets(target,home):
     models=home/'.local/share/jinx/models'
+    import importlib.util
+    spec=importlib.util.spec_from_file_location('jinx_model_assets',ROOT/'app/model_assets.py')
+    model_assets=importlib.util.module_from_spec(spec);spec.loader.exec_module(model_assets)
+    model_assets.wake_word(models)
     for row in json.loads((ROOT/'assets.json').read_text()):download(row,models/row['path'])
     private=ROOT/'personal-assets'
     if private.exists():
@@ -174,6 +192,27 @@ def assets(target,home):
             if p.is_file():
                 dest=target/p.relative_to(private);dest.parent.mkdir(parents=True,exist_ok=True)
                 if not dest.exists():shutil.copy2(p,dest)
+    profile=ROOT/'personal-profile'
+    if (profile/'profile.json').is_file():
+        import importlib.util
+        spec=importlib.util.spec_from_file_location('jinx_private_profile',ROOT/'windows/personal_profile.py')
+        transfer=importlib.util.module_from_spec(spec);spec.loader.exec_module(transfer)
+        state=home/'.local/state/jinx'
+        transfer.import_folder(profile,state,models)
+        for name,relative in [('reference-short.wav','voice-jinx/reference-short.wav'),('jinx-character.glb','avatar3d/avatars/jinx-character.glb'),('wake-jinx.jpg','avatar3d/native/icons/wake-jinx.jpg'),('sleep-skull.jpg','avatar3d/native/icons/sleep-skull.jpg')]:
+            source=state/'assets'/name
+            if source.is_file():
+                dest=target/relative;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,dest)
+        run([sys.executable,ROOT/'windows/voice-build.py'])
+        voice_dir=models/'breeze-cpp';voice_dir.mkdir(parents=True,exist_ok=True)
+        for library in (ROOT/'dist/voice').glob('*.so*'):shutil.copy2(library,voice_dir/library.name)
+        download({'url':'https://huggingface.co/HoppouAI/Breeze-TTS-2.cpp/resolve/main/breeze-tts-2-q8_0.gguf','sha256':'a02bcc4b69b0601032727f8040c4942149b1b73aa0f69022fe5aaa6a8f0ef879'},voice_dir/'breeze-tts-2-q8_0.gguf')
+        settings=state/'state.json'
+        if settings.is_file():
+            previous=settings.with_name('state.before-profile-import.json')
+            if not previous.exists():shutil.copy2(settings,previous)
+            data=json.loads(settings.read_text());data.update(voice='breeze_tts2',voice_speed=1.0)
+            temporary=settings.with_suffix('.tmp');temporary.write_text(json.dumps(data,indent=2));temporary.chmod(0o600);temporary.replace(settings)
     avatar=target/'avatar3d/avatars/jinx-character.glb'
     if not avatar.exists():
         row=json.loads((ROOT/'starter-avatar.json').read_text())
@@ -247,7 +286,7 @@ def main():
     except Exception:
         print('Installation did not finish. Your previous app is preserved at',backup/'previous-app',file=sys.stderr)
         raise
-    print('\nJinx is installed. Open Jinx from the application menu. Nothing starts at login.\nBackup:',backup)
+    print('\nJinx is installed. Open Jinx from the application menu. AI and avatar start only on demand; a lightweight helper delivers reminders.\nBackup:',backup)
 
 
 if __name__=='__main__':

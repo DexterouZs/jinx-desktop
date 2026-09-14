@@ -10,18 +10,18 @@
 
 | Your system | Download | Start here |
 |---|---|---|
-| **CachyOS / Arch · KDE Plasma 6** | [**Download Linux ZIP**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.2.0-preview/Jinx-0.2.0-preview-linux.zip) | Extract, then run `bash "Install Jinx.sh" --install-deps` |
-| **Windows 11 · x64** | [**Download Windows installer**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.2.0-preview/Jinx-0.2.0-preview-windows-x64-setup.exe) | Run the installer, open Jinx, then follow Settings → Get Ollama |
+| **CachyOS / Arch · KDE Plasma 6** | [**Download Linux ZIP**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.3.0-preview/Jinx-0.3.0-preview-linux.zip) | Extract, then run `bash "Install Jinx.sh" --install-deps` |
+| **Windows 11 · x64** | [**Download Windows installer**](https://github.com/DexterouZs/jinx-desktop/releases/download/v0.3.0-preview/Jinx-0.3.0-preview-windows-x64-setup.exe) | Run the installer, open Jinx, then follow Setup → Prepare models |
 
 **[Download Jinx →](https://github.com/DexterouZs/jinx-desktop/releases)** · [Linux setup](docs/INSTALL.md) · [Windows setup](docs/WINDOWS.md)
 
-Both editions are previews. **Windows is a smaller native port**, with chat, voice, memory, basic app/website launches and an avatar view. Linux has the established animated desktop widget and broader integrations described below. Windows does not yet include the Linux system-admin, calendar, screen, continuous-conversation or cloned-voice features.
+Both editions are previews. **Windows now uses the shared Jinx assistant backend**, including continuous conversation, memory, reading/writing, calendar tools and the original Breeze voice engine. Its desktop controls use native Windows interfaces. [Platform differences and limits →](docs/PORTABILITY.md)
 
-Models download separately. Linux's full setup needs roughly 13 GB of model storage; the Windows everyday model needs roughly 3–4 GB, plus the app and speech model. **Jinx starts only when you launch her.** No personal accounts, memories or API keys are included.
+Models download separately; allow roughly 20 GB for full local setup. Your private NAS profile supplies your original voice and avatar. Public downloads offer a free starter instead. **Jinx starts on demand.** A separate lightweight reminder helper can deliver due reminders without loading AI. No personal accounts, memories, passwords or API keys are included.
 
 On an existing Linux installation, use `--update` only when you intend to update it. The installer preserves private data and creates a previous-app backup. [Installation and recovery →](docs/INSTALL.md)
 
-### Linux features
+### Assistant features
 
 | Capability | How it works |
 |---|---|
@@ -43,14 +43,14 @@ Try “Open Firefox”, “Remember that I prefer short answers”, “Show me t
 - No credentials, conversation history, personal contacts or household network configuration are included in this repository or release ZIP.
 - Microphone/wake-word listening is opt-in; explicit screen reading shows a visible indicator.
 - Web searches and optional connected services send requests to their providers. “Local AI” does not make those integrations offline.
-- Messages and calendar changes retain their application confirmation flow. Shell access runs with your user permissions and a denylist; **it is not a security sandbox**.
+- Messages and calendar changes retain their application confirmation flow. Linux shell access uses your user permissions and a denylist; **it is not a security sandbox**. Windows exposes bounded diagnostic commands and reviewed WinGet installs.
 - The installer does not tune your kernel, fans, sleep, power profiles or NPU driver.
 
 ### Avatar and voices
 
 Fresh installations use a British Piper voice and an optional Ready Player Me starter avatar. The starter avatar is **CC BY-NC 4.0, personal/non-commercial use**. The application's code license does not override asset licenses.
 
-Personal character models and voice recordings are not distributed through GitHub. A private NAS restoration ZIP may include a `personal-assets/` folder which the installer imports locally. Breeze/F5 cloning remains an advanced optional integration requiring its separate model/runtime files. Existing configured voices are preserved during an update. [Assets and attribution →](docs/ASSETS.md)
+Personal character models and voice recordings are not distributed through GitHub. Private NAS packages contain a strictly checked `personal-profile/` folder; keys, accounts and memory are excluded. Both installers support the matching Breeze TTS2 Q8 engine and your original reference recording. Windows offers Breeze and Alba; the separate Linux F5/Kokoro environments are not bundled. [Assets and attribution →](docs/ASSETS.md)
 
 ### What to expect
 

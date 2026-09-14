@@ -15,6 +15,7 @@ import time
 from runtime_paths import state_dir,models_dir,runtime_dir
 
 NO_WINDOW=getattr(subprocess,'CREATE_NO_WINDOW',0)
+DETACH=NO_WINDOW|getattr(subprocess,'CREATE_BREAKAWAY_FROM_JOB',0)
 
 def powershell(script,timeout=20):
  encoded=base64.b64encode(("$ErrorActionPreference='Stop';[Console]::OutputEncoding=[Text.UTF8Encoding]::new();"+script).encode('utf-16-le')).decode()
@@ -63,8 +64,8 @@ def desktop_apps(args):
  key=system_tools.resolve_app(str(args.get('app','')),apps)
  if key is None:return {'error':'No unique installed app matches that name.','apps':apps}
  app=apps[key]
- if app.get('builtin'):subprocess.Popen([app['desktop']],creationflags=NO_WINDOW)
- else:subprocess.Popen(['explorer.exe','shell:AppsFolder\\'+app['desktop']],creationflags=NO_WINDOW)
+ if app.get('builtin'):subprocess.Popen([app['desktop']],creationflags=DETACH)
+ else:subprocess.Popen(['explorer.exe','shell:AppsFolder\\'+app['desktop']],creationflags=DETACH)
  system_tools.audit('open_app',{'app':key,'ok':True})
  return {'status':'launch_requested','app':app['name'],'detail':'Windows accepted the launcher. Its window and login are not yet verified.'}
 

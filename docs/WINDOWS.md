@@ -1,50 +1,25 @@
-# Jinx for Windows — 0.2 preview
+# Jinx for Windows
 
-**Windows 11 x64.** This is the first native Windows edition. It shares Jinx's character, local-model approach and TalkingHead avatar renderer, with a smaller Windows-specific feature set. It is not the full KDE/Linux backend running on Windows.
+The Windows edition now uses the shared Jinx assistant backend, with a native transparent desktop avatar and the full reading, writing, memory and settings workspace.
 
-## Install
+## Your original Jinx
 
-1. Download **Jinx-0.2.0-preview-windows-x64-setup.exe** from [Releases](https://github.com/DexterouZs/jinx-desktop/releases).
-2. Run the installer, then open **Jinx** from Start. Installation is per user; administrator privileges are not requested. No Python installation is needed.
-3. In **Settings → Get Ollama**, install the official Windows Ollama application and open it. Then choose **Download everyday model** in Jinx. Allow approximately 3–4 GB for Qwen 3.5 4B; other models can be much larger.
-4. Click **Refresh**, choose an installed local model, and send a message. **Think longer** is optional; leave it off for everyday conversation.
-5. Press **Talk** or click the avatar. The first use asks before downloading multilingual Whisper base (approximately 150 MB). Speak, then pause. Press **Stop** to cancel. Microphone input is not continuously monitored; this preview requires another click for the next spoken turn.
+Use the separate **Jinx-Windows.zip** on your NAS. Extract it, run the included setup EXE, then open Jinx setup and import the **personal-profile** folder. This supplies your original 3D character, reference recording and matching Breeze TTS2 Q8 model. Prepare the remaining local AI/speech models, then choose **Start Jinx**.
 
-The installer and portable ZIP are unsigned preview builds, so Windows may show an unknown-publisher warning. Verify downloads against the release SHA-256 file. Do not disable Defender or other system protections.
+The public download contains no private profile, accounts, passwords, API keys, personal memory or chat history. Other users can choose a free starter avatar/Alba voice or import their own compatible profile. Account connections must be configured on each computer; new Windows provider keys are saved in Windows Credential Manager.
 
-## What works in this preview
+## Using Jinx
 
-- Native dark desktop window with local streaming chat and installed-model selection.
-- English/German speech recognition on CPU, English replies through installed Windows SAPI voices. British Hazel is preferred if available. Voice quality depends on the voices installed on Windows.
-- A TalkingHead-compatible GLB avatar, chosen in Settings, with idle movement and simple speech motion. Mouth motion is approximate rather than phoneme-aligned. The optional free starter avatar is separately downloaded and checksum-verified, under CC BY-NC 4.0.
-- Explicit SSD memory: “Remember that I prefer short answers”; edit/delete notes in Settings. New conversation clears the in-memory conversation and preserves saved notes. Conversation transcripts and microphone recordings are not written to disk.
-- “Open Spotify”, “Open Steam”, “Open Notepad”, “Open Calculator”, “Open File Explorer”, “Open Settings”, “Open nexus mods website”, or “Open example.com”. App launches report that Windows accepted the request, not that playback was verified.
-- “Search YouTube for ambient music” and “Search the web for …” open your browser. They do not scrape or read the search results.
-- Drafting, rewriting and answering questions with the selected local model. Model-generated text never becomes an executable command.
+Click her body once to start a fresh conversation. She detects the end of your speech, answers and listens again. Click again to stop. Ctrl+Alt+J starts/stops talking, and the tray menu opens settings or puts Jinx to sleep. Sleeping Jinx releases her backend, avatar and owned model processes. Applications she launches and an authorised Windows installation have their own lifetime.
 
-**Not yet ported:** Linux continuous conversation/wake word, transparent always-on-top desktop placement, Breeze/F5 cloned voices, Linux/Hermes system tools, screen reading, Spotify named-track playback, Morgen calendars, email delivery, ZapZap, NPU execution and KDE/TDP integration. No Windows system administration is implied by this preview. The Linux edition retains its existing features.
+The three-dot avatar menu provides movement, size, voice, model and screen-reading controls. Blue corners indicate an explicitly requested primary-screen snapshot. Read or write documents, use copied text, research public websites, save memories, open installed apps and Steam titles, and control signed-in Spotify playback. WhatsApp uses a dedicated, visible Edge window and keeps exact-recipient/read-back confirmation before sending. Windows diagnostics use native system information and Event Log; installations use reviewed exact WinGet IDs and version verification.
 
-## Privacy and resources
+Connect Morgen in setup for calendar actions. A lightweight user task delivers due reminders without loading AI when Jinx is closed; Windows notification/Focus Assist settings still control whether notifications appear. Uninstall removes the task and app files, while retaining your private data and models.
 
-Jinx starts only when launched. It does not install a background service or open an HTTP listening port. Chat connects directly to loopback Ollama; no cloud model or API key is configured. Model/voice/avatar downloads and browser actions use the internet. Whisper audio remains in memory. Ollama's own autostart preference is managed by Ollama, separately from Jinx.
+## Requirements and limits
 
-Application: `%LOCALAPPDATA%\Programs\Jinx`. Private notes, settings, selected starter avatar and recognition model: `%LOCALAPPDATA%\Jinx\data`. Ollama keeps its own models. Uninstalling Jinx removes the app and shortcuts, preserving your private data and Ollama. Use Settings → Open private data folder to manage those files deliberately.
+Use 64-bit Windows with current graphics/audio drivers, Ollama, and enough RAM/storage for the selected models. Setup allows roughly 20 GB for both language models and speech assets. The everyday model is Qwen 3.5 4B; advanced tasks use the same configured Qwen 27B alias as Linux. Breeze uses Vulkan when available, with a slower CPU fallback. It does not combine NPU/GPU throughput.
 
-Close Jinx before updating. The portable ZIP contains the same application and uses the same private data directory. AI model weights, your personal avatar, memories and cloned voices are not bundled.
+The Windows adapters are new. Build/import, installer and synthetic speech tests are distinct from testing your physical GPU, microphone and signed-in apps. Performance depends on the PC. Windows-specific replacements cover common tasks; Linux kernel, ASUS fan/undervolt controls, KDE and SteamOS session switching do not transfer to another Windows computer. Arbitrary PowerShell administration is not exposed; bounded diagnostics and reviewed app installation are available.
 
-## Build and validation
-
-The **Windows installer** GitHub Actions workflow builds on Windows with Python 3.12, PySide6 and PyInstaller. It checks the packaged Qt WebEngine UI, imports the speech runtimes, enumerates Windows voices, installs the actual EXE, launches the installed app, and verifies that uninstall preserves private data. Build dependency versions and a smoke-test report accompany the release.
-
-These automated checks do not prove microphone quality, real-world latency, GPU support on every PC or complete visual behaviour on a physical Windows desktop. Ollama chooses supported GPU acceleration; NPU/GPU work cannot simply be combined.
-
-To build yourself on Windows:
-
-```powershell
-python -m pip install -r windows/requirements.txt
-npm ci --ignore-scripts --prefix app/avatar3d
-python windows/build.py
-& "${env:ProgramFiles(x86)}\NSIS\makensis.exe" windows/installer.nsi
-```
-
-Dependencies: [PyInstaller](https://pyinstaller.org/en/stable/), [Qt for Python](https://doc.qt.io/qtforpython-6/), [Ollama for Windows](https://ollama.com/download/windows), [faster-whisper](https://github.com/SYSTRAN/faster-whisper), [NSIS](https://nsis.sourceforge.io/Docs/).
+Only Breeze and Alba are enabled in the Windows voice picker. The separate Linux F5 and Kokoro environments are not bundled. English/German recognition remains local; replies use the selected English voice. Your original Breeze timbre requires the private recording, which is intentionally absent from GitHub.

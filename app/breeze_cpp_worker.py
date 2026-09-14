@@ -12,7 +12,14 @@ def main():
  try:
   requests=queue.Queue(maxsize=4)
   def read_requests():
-   for line in sys.stdin:requests.put(line)
+   pending=b''
+   while True:
+    block=os.read(0,8192)
+    if not block:break
+    pending+=block
+    if len(pending)>65536:break
+    while b'\n' in pending:
+     line,pending=pending.split(b'\n',1);requests.put(line.decode('utf-8'))
    requests.put(None)
   threading.Thread(target=read_requests,daemon=True).start()
   while True:

@@ -34,7 +34,10 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(key.read_text(),'synthetic-local-access')
             self.assertEqual((backup/'.config/systemd/user/jinx.service').read_text(),'previous unit')
             commands=[list(call.args[0]) for call in run.call_args_list]
-            self.assertEqual(commands,[['systemctl','--user','daemon-reload']])
+            self.assertEqual(commands,[['systemctl','--user','daemon-reload'],['systemctl','--user','enable','--now','jinx-reminders.timer']])
+            reminder=(home/'.config/systemd/user/jinx-reminders.service').read_text()
+            self.assertIn('reminder_delivery.py',reminder)
+            self.assertNotIn('jinx.py',reminder)
             self.assertNotIn('WantedBy',unit.read_text())
 
     def test_failed_asset_download_preserves_existing_asset(self):

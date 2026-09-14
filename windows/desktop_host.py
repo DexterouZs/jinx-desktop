@@ -1,7 +1,7 @@
 """Native transparent Windows host for Jinx's shared avatar and full workspace."""
 from pathlib import Path
 import ctypes,json,os,secrets,shutil,subprocess,sys,time,urllib.request
-from PySide6.QtCore import QTimer,QUrl,Qt,QProcess,QProcessEnvironment,QPoint
+from PySide6.QtCore import QTimer,QUrl,Qt,QProcess,QProcessEnvironment,QPoint,QLockFile
 from PySide6.QtGui import QColor,QIcon,QPainter,QPen,QDesktopServices
 from PySide6.QtWidgets import QApplication,QWidget,QMainWindow,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QDialog,QFileDialog,QMessageBox,QTextEdit,QSystemTrayIcon,QMenu
 from PySide6.QtWebEngineCore import QWebEnginePage,QWebEngineProfile,QWebEngineUrlRequestInterceptor,QWebEngineSettings
@@ -50,7 +50,7 @@ class Corners(QWidget):
 class Workspace(QMainWindow):
  def __init__(self,owner):
   super().__init__();self.setWindowTitle('Jinx · Settings and workspace');self.resize(960,840)
-  self.view=owner.webview(self,transparent=False);self.setCentralWidget(self.view);self.view.setUrl(QUrl(ORIGIN+'/'))
+  self.view=owner.webview(self,transparent=False);self.setCentralWidget(self.view);self.view.loadFinished.connect(lambda ok:owner.platform_options(self.view) if ok else None);self.view.setUrl(QUrl(ORIGIN+'/'))
 
 class Setup(QDialog):
  def __init__(self,owner):
@@ -60,32 +60,47 @@ class Setup(QDialog):
   row=QHBoxLayout();box.addLayout(row)
   folder=QPushButton('Import NAS profile folder');folder.clicked.connect(self.import_profile);row.addWidget(folder)
   archive=QPushButton('Import Windows NAS ZIP');archive.clicked.connect(lambda:self.import_profile(True));row.addWidget(archive)
+  starter=QPushButton('Use a free starter avatar and voice');starter.clicked.connect(self.starter);box.addWidget(starter)
+  accounts=QPushButton('Connect my accounts privately');accounts.clicked.connect(self.accounts);box.addWidget(accounts)
   self.log=QTextEdit();self.log.setReadOnly(True);box.addWidget(self.log)
   row=QHBoxLayout();box.addLayout(row)
   ollama=QPushButton('Install / open Ollama');ollama.clicked.connect(lambda:QDesktopServices.openUrl(QUrl('https://ollama.com/download/windows')));row.addWidget(ollama)
   self.download=QPushButton('Prepare models');self.download.clicked.connect(self.prepare);row.addWidget(self.download)
   ready=QPushButton('Start Jinx');ready.clicked.connect(self.start);row.addWidget(ready)
   self.log.setPlainText('Account keys and passwords are never imported from a release. Connect your own services privately after installation.\n\nModels need about 20 GB of free space and a fast connection. The 27B model is optional for everyday chat but is used for advanced tasks. Your original Breeze voice needs its model and private reference recording.')
+ def accounts(self):
+  import accounts
+  accounts.show(self,DATA)
  def import_profile(self,archive=False):
   from personal_profile import import_folder,import_zip
   chosen=QFileDialog.getOpenFileName(self,'Choose Jinx-Windows ZIP','','ZIP (*.zip)')[0] if archive else QFileDialog.getExistingDirectory(self,'Choose the personal-profile folder')
   if not chosen:return
+  self.owner.sleep()
   try:
    names=(import_zip if archive else import_folder)(chosen,DATA,MODELS)
+   state=json.loads((DATA/'state.json').read_text());state.update(voice='breeze_tts2',voice_speed=1.0);atomic(DATA/'state.json',state)
    self.log.append('Imported and verified: '+', '.join(names))
   except Exception as e:QMessageBox.warning(self,'Profile not imported',str(e))
- def prepare(self):
+ def starter(self):
+  if QMessageBox.question(self,'Starter avatar','Download the Ready Player Me starter avatar (CC BY-NC 4.0, personal/non-commercial use) and the free Alba voice? Your NAS profile supplies your original Jinx instead.')!=QMessageBox.StandardButton.Yes:return
+  self.prepare(True)
+ def prepare(self,starter=False):
   if self.process:return
-  if QMessageBox.question(self,'Download local models','Prepare Breeze, multilingual speech recognition and the everyday/advanced local AI models? Allow around 20 GB of storage and a large download.')!=QMessageBox.StandardButton.Yes:return
-  if not self.owner.start_model():return
+  if not starter and QMessageBox.question(self,'Download local models','Prepare Breeze, multilingual speech recognition and the everyday/advanced local AI models? Allow around 20 GB of storage and a large download.')!=QMessageBox.StandardButton.Yes:return
+  if not starter and not self.owner.start_model():return
   self.process=QProcess(self);self.process.setProcessEnvironment(env());self.process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
   self.process.readyReadStandardOutput.connect(lambda:self.log.append(bytes(self.process.readAllStandardOutput()).decode('utf-8',errors='replace')[-5000:]))
   def finished(code,status):
    self.download.setEnabled(True);self.log.append('Model setup completed.' if code==0 else 'Setup stopped. The last error is shown above; existing models were preserved.');self.process.deleteLater();self.process=None
   self.process.finished.connect(finished);self.download.setEnabled(False)
-  self.process.start(python(),[str(BUNDLE/'windows/setup_models.py')])
+  self.process.start(python(),[str(BUNDLE/'windows/setup_models.py')]+(['--starter'] if starter else []))
  def start(self):
-  if not (DATA/'assets/reference-short.wav').exists() or not (DATA/'assets/jinx-character.glb').exists():QMessageBox.information(self,'Original profile needed','Import your private Jinx profile from the NAS first.');return
+  state=json.loads((DATA/'state.json').read_text())
+  if (state.get('voice')=='breeze_tts2' and not (DATA/'assets/reference-short.wav').exists()) or not (DATA/'assets/jinx-character.glb').exists():QMessageBox.information(self,'Original profile needed','Import your private Jinx profile from the NAS first.');return
+  try:
+   import reminder_task
+   reminder_task.register(BUNDLE)
+  except Exception:QMessageBox.warning(self,'Reminder delivery','Windows could not enable reminders while Jinx is closed. Reminders will still work while Jinx is open.')
   self.accept();self.owner.wake()
  def closeEvent(self,event):
   if self.process:event.ignore();self.log.append('Model setup is still running. This window stays open until it finishes.')
@@ -116,7 +131,9 @@ class Avatar(QWidget):
     from personal_profile import import_folder
     import_folder(profile,DATA,MODELS)
    except Exception:pass
-  if (DATA/'assets/reference-short.wav').is_file():self.wake()
+  state=json.loads((DATA/'state.json').read_text())
+  voice_ready=state.get('voice')=='piper_alba' or (DATA/'assets/reference-short.wav').is_file()
+  if voice_ready and (DATA/'assets/jinx-character.glb').is_file():self.wake()
   else:self.configure()
  def webview(self,parent,transparent=True):
   view=QWebEngineView(parent);page=Page(self.profile,view);view.setPage(page)
@@ -133,7 +150,7 @@ class Avatar(QWidget):
   except OSError:pass
   executable=shutil.which('ollama') or str(Path(os.environ.get('LOCALAPPDATA',''))/'Programs/Ollama/ollama.exe')
   if not Path(executable).is_file():QMessageBox.information(self,'Ollama needed','Install Ollama, then choose Prepare models in Jinx setup.');return False
-  self.model_process=QProcess(self);e=env();e.insert('OLLAMA_HOST','127.0.0.1:11435');e.insert('OLLAMA_KEEP_ALIVE','5m');e.insert('OLLAMA_FLASH_ATTENTION','1');self.model_process.setProcessEnvironment(e);self.model_process.start(executable,['serve'])
+  self.model_process=QProcess(self);e=env();e.insert('OLLAMA_HOST','127.0.0.1:11435');e.insert('OLLAMA_KEEP_ALIVE','5m');e.insert('OLLAMA_FLASH_ATTENTION','1');e.insert('OLLAMA_KV_CACHE_TYPE','q4_0');e.insert('OLLAMA_NO_CLOUD','1');e.insert('OLLAMA_MODELS',str(MODELS/'ollama'));self.model_process.setProcessEnvironment(e);self.model_process.start(executable,['serve'])
   result=self.model_process.waitForStarted(3000)
   if result:self.own(self.model_process)
   return result
@@ -148,7 +165,7 @@ class Avatar(QWidget):
   if os.name!='nt':return
   import win32job,win32api,win32con
   job=win32job.CreateJobObject(None,None);info=win32job.QueryInformationJobObject(job,win32job.JobObjectExtendedLimitInformation)
-  info['BasicLimitInformation']['LimitFlags']|=win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+  info['BasicLimitInformation']['LimitFlags']|=win32job.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE|win32job.JOB_OBJECT_LIMIT_BREAKAWAY_OK
   win32job.SetInformationJobObject(job,win32job.JobObjectExtendedLimitInformation,info)
   handle=win32api.OpenProcess(win32con.PROCESS_SET_QUOTA|win32con.PROCESS_TERMINATE,False,int(process.processId()))
   try:win32job.AssignProcessToJobObject(job,handle)
@@ -160,7 +177,9 @@ class Avatar(QWidget):
   if 'Traceback' in output or 'Error:' in output:self.skill.setToolTip('Jinx could not start. Open setup to check its dependencies.')
  def page_loaded(self,ok):
   self.loaded=ok
-  if ok:self.publish_layout()
+  if ok:self.publish_layout();self.platform_options(self.web)
+ def platform_options(self,view):
+  view.page().runJavaScript("for(const o of document.querySelectorAll('#voiceChoice option'))if(!['breeze_tts2','piper_alba'].includes(o.value))o.remove();for(const o of document.querySelectorAll('#speechEngine option'))if(o.value!=='cpu')o.remove();")
  def apply_layout(self):
   scale=max(.5,min(1.5,float(self.layout_state.get('scale',.85))))
   self.layout_state['scale']=scale;self.resize(round(532*scale),round(668*scale))
@@ -225,7 +244,10 @@ class Avatar(QWidget):
   if self.setup is None:self.setup=Setup(self)
   self.setup.show();self.setup.raise_();self.setup.activateWindow()
  def talk(self):
-  if not self.backend:self.wake();return
+  if not self.backend:
+   self.wake()
+   if self.backend:QTimer.singleShot(1800,self.talk)
+   return
   try:
    state=self.api('/status');self.api('/stop' if state.get('conversation') or state.get('busy') else '/conversation',{})
   except Exception:self.configure()
@@ -260,7 +282,26 @@ def main():
  TOKEN=key.read_text().strip()
  if not (DATA/'state.json').exists():atomic(DATA/'state.json',{'voice':'breeze_tts2','voice_speed':1,'speech_engine':'cpu','ai_mode':'local_fast','listening':False,'speak':True,'thinking_sounds':True,'memory':'','reminders':[],'pending':[]})
  app=QApplication(sys.argv);app.setQuitOnLastWindowClosed(False);app.setApplicationName('Jinx');app.setStyleSheet(STYLE)
+ if '--notification-file' in sys.argv:
+  try:
+   path=Path(sys.argv[sys.argv.index('--notification-file')+1]).resolve()
+   if path.parent!=(RUNTIME/'notifications').resolve() or not __import__('re').fullmatch(r'[a-f0-9]{24}\.json',path.name):return 1
+   value=json.loads(path.read_text())
+   if value.get('expires',0)<time.time():return 1
+   tray=QSystemTrayIcon(QIcon(str(ASSETS/'jinx.ico')));tray.show()
+   if not QSystemTrayIcon.supportsMessages():return 1
+   QTimer.singleShot(250,lambda:tray.showMessage(str(value['title']),str(value['text']),QSystemTrayIcon.MessageIcon.Information,10000))
+   QTimer.singleShot(10000,app.quit);result=app.exec();tray.hide();return result
+  except Exception:return 1
+ lock=None
+ if not smoke:
+  lock=QLockFile(str(RUNTIME/'desktop.lock'));lock.setStaleLockTime(0)
+  if not lock.tryLock(0):
+   QMessageBox.information(None,'Jinx is already open','Use the Jinx portrait or tray icon to start talking.');return 0
  window=Avatar(smoke)
+ if not smoke and os.name=='nt':
+  from hotkey import NativeEvents
+  events=NativeEvents(window);app.installNativeEventFilter(events);app.aboutToQuit.connect(events.close)
  if smoke:
   window.web=window.webview(window);window.web.setGeometry(window.rect());window.web.show()
   # UI imports/rendering are tested without microphone, account credentials or model downloads.
