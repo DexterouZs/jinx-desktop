@@ -1,5 +1,7 @@
 name: Windows shared backend validation
 on:
+  push:
+    branches: [windows-parity]
   workflow_dispatch:
 permissions:
   contents: read
