@@ -213,7 +213,7 @@ async function poll(){
   }
   lastPhase=phase;let active=state.busy||state.ptt;document.body.classList.toggle('active',!!active);
   let n=(state.pending||[]).length;document.body.classList.toggle('pending',n>0);$('reviewButton').style.display=n?'':'none';$('reviewButton').textContent='Review '+n;
-  
+
   $('thinkingSounds').checked=state.thinking_sounds!==false;$('wake').checked=!!state.listening;$('voice').checked=!!state.speak;if(document.activeElement.id!=='voiceChoice')$('voiceChoice').value=state.voice||'kokoro_emma';$('voicePreview').disabled=!!(state.busy||state.ptt||state.conversation);if(document.activeElement.id!=='avatarVoiceSpeed'){$('avatarVoiceSpeed').value=state.voice_speed||1;$('avatarVoiceSpeedValue').value=Number(state.voice_speed||1).toFixed(2)+'×';}
   if(state.busy||state.ptt)silentSubtitleUntil=0;
   const lastReply=state.messages?.at(-1);

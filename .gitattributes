@@ -1,0 +1,3 @@
+app/avatar3d/vendor/** -whitespace
+*.sh text eol=lf
+*.py text eol=lf
